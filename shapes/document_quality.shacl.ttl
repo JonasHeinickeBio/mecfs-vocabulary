@@ -34,9 +34,9 @@ mecfssh:PaperIdentifierFormatShape a sh:NodeShape ;
     sh:targetClass aid-pais:DocumentMetadata ;
     sh:property [
         sh:path aid-pais:pmcId ;
-        sh:pattern "^PMC[0-9]{5,8}$" ;
+        sh:pattern "^PMC[0-9]+$" ;
         sh:severity sh:Violation ;
-        sh:message "aid-pais:pmcId must be PMC followed by 5 to 8 digits." ;
+        sh:message "aid-pais:pmcId must be PMC followed by digits." ;
     ] ;
     sh:property [
         sh:path aid-pais:pubmedId ;
@@ -45,18 +45,13 @@ mecfssh:PaperIdentifierFormatShape a sh:NodeShape ;
         sh:message "aid-pais:pubmedId must be 1 to 9 digits." ;
     ] ;
     # A record Europe PMC does not hold gets its own identifier as the key, written as doi:...,
-    # pmid:... or pmcid:... (11,444 of 65,963 papers in full-src4: 11,419, 17 and 7).
+    # pmid:... or pmcid:... (11,444 of 65,963 papers in full-src4: 11,419, 17 and 7). Allowed, and
+    # not reported: an Info on every such paper made a conforming graph "non-conforming".
     sh:property [
         sh:path aid-pais:europePMCId ;
         sh:pattern "^([A-Za-z0-9_]+|(doi|pmid|pmcid):.+)$" ;
         sh:severity sh:Violation ;
         sh:message "aid-pais:europePMCId must be a Europe PMC id (digits, PMC..., PPR...) or, for a record Europe PMC does not hold, doi:..., pmid:... or pmcid:...." ;
-    ] ;
-    sh:property [
-        sh:path aid-pais:europePMCId ;
-        sh:pattern "^[A-Za-z0-9_]+$" ;
-        sh:severity sh:Info ;
-        sh:message "aid-pais:europePMCId holds a fallback key (doi:, pmid: or pmcid:), not a Europe PMC id: Europe PMC does not hold this record." ;
     ] ;
     sh:property [
         sh:path schema:datePublished ;
