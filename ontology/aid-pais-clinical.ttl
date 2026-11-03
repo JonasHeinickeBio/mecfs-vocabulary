@@ -1,0 +1,194 @@
+@prefix : <https://w3id.org/mecfs/kg/> .
+@prefix owl: <http://www.w3.org/2002/07/owl#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix dc: <http://purl.org/dc/elements/1.1/> .
+@prefix IAO: <http://purl.obolibrary.org/obo/IAO_> .
+@prefix MONDO: <http://purl.obolibrary.org/obo/MONDO_> .
+@prefix HP: <http://purl.obolibrary.org/obo/HP_> .
+@prefix SYMP: <http://purl.obolibrary.org/obo/SYMP_> .
+@prefix EFO: <http://www.ebi.ac.uk/efo/EFO_> .
+@prefix NCIT: <http://purl.obolibrary.org/obo/NCIT_> .
+@prefix OMIT: <http://purl.obolibrary.org/obo/OMIT_> .
+@prefix MESH: <http://id.nlm.nih.gov/mesh/> .
+@prefix skos: <http://www.w3.org/2004/02/skos/core#> .
+
+<https://w3id.org/mecfs/ontology/clinical> a owl:Ontology ;
+  owl:imports <https://w3id.org/mecfs/ontology/core> ,
+              <http://purl.obolibrary.org/obo/mondo.owl> ,
+              <http://purl.obolibrary.org/obo/hp.owl> ,
+              <http://purl.obolibrary.org/obo/symp.owl> ,
+              <http://purl.obolibrary.org/obo/ncit.owl> ,
+              <http://www.ebi.ac.uk/efo/efo.owl> ,
+              <http://purl.obolibrary.org/obo/omit.owl> ;
+  owl:versionIRI <https://w3id.org/mecfs/ontology/clinical/2025-09-22> ;
+  dc:title "AID-PAIS Clinical Ontology" ;
+  dc:description "Clinical module for AID-PAIS ontology, covering diseases, symptoms, treatments, and related entities." .
+
+# =====================================================
+# Clinical module — core classes
+# Grouping: disease, phenotype, symptom, treatment, procedure
+# =====================================================
+
+:Disease a owl:Class ;
+  rdfs:subClassOf :Entity ;
+  rdfs:label "Disease" ;
+  IAO:0000115 "A disorder or condition affecting an organism." ;
+  owl:equivalentClass MONDO:0000001 .
+
+:Phenotype a owl:Class ;
+  rdfs:subClassOf :Entity ;
+  rdfs:label "Phenotype" ;
+  IAO:0000115 "Observable characteristics or traits of an organism." ;
+  owl:equivalentClass HP:0000118 .
+
+:Symptom a owl:Class ;
+  rdfs:subClassOf :Phenotype ;
+  rdfs:label "Symptom" ;
+  IAO:0000115 "A subjective or objective indication of a disease or condition." ;
+  owl:equivalentClass SYMP:0000467 ;
+  rdfs:comment "Symptom (symp:Symptom) is a specific type of Phenotype. Phenotype (HP:0000118) covers all observable characteristics, including symptoms, signs, and traits. Symptoms are typically patient-reported or experienced, while phenotypes include both symptoms and clinically observed features." .
+
+:Treatment a owl:Class ;
+  rdfs:subClassOf :Entity ;
+  rdfs:label "Treatment" ;
+  IAO:0000115 "An intervention or therapy to address a disease or condition." ;
+  owl:equivalentClass EFO:0000727  ;
+  skos:exactMatch NCIT:C49236 .
+
+:Procedure a owl:Class ;
+  rdfs:subClassOf :Entity ;
+  rdfs:label "Procedure" ;
+  IAO:0000115 "A clinical intervention or procedure performed on a patient." ;
+  owl:equivalentClass NCIT:C25218 ;
+  skos:exactMatch EFO:0002571 .
+
+
+# =====================================================
+# Study/population metadata
+# Includes demographics, case definitions and related properties
+# =====================================================
+
+:Demographic a owl:Class ;
+  rdfs:subClassOf :Entity ;
+  rdfs:label "Demographic" ;
+  IAO:0000115 "Population characteristics such as age, sex, or ethnicity." ;
+  owl:equivalentClass NCIT:C142508 ;
+  skos:exactMatch NCIT:C16495 .
+
+:CaseDefinition a owl:Class ;
+  rdfs:subClassOf :Entity ;
+  rdfs:label "Case Definition" ;
+  IAO:0000115 "A formal set of criteria used to define a disease or condition in research or clinical practice (e.g., 1994 CDC CFS case definition, Canadian Consensus Criteria)." ;
+  owl:equivalentClass <http://purl.obolibrary.org/obo/APOLLO_SV_00000296> .
+
+:Cohort a owl:Class ;
+  rdfs:subClassOf :Entity ;
+  rdfs:label "Cohort" ;
+  IAO:0000115 "The specific group of participants an Observation was measured in (e.g. \"ME/CFS patients\", \"healthy controls\", \"long COVID cohort, 6-month follow-up\")." ;
+  rdfs:comment "Mirrors schemas/linkml/clinical/clinical.yaml's Cohort class -- declared here so :hasCohort's rdfs:range (aid-pais-evidence.ttl) resolves to a real class. Minimal by design (issue #5): no current extraction stage identifies cohorts from text, so this is schema-ready but rarely populated -- see docs/assembly/ASSEMBLY.md." .
+
+:criteria a owl:DatatypeProperty ;
+  rdfs:domain :CaseDefinition ;
+  rdfs:label "criteria" ;
+  IAO:0000115 "Textual description or identifier for the diagnostic case definition criteria used to determine disease status in a study (e.g., 1994 CDC CFS case definition, Canadian Consensus Criteria, IOM criteria)." .
+
+:matching a owl:DatatypeProperty ;
+  rdfs:domain :Demographic ;
+  rdfs:label "matching" ;
+  IAO:0000115 "Description of how cases and controls are matched in the study (e.g., by age, sex)." .
+
+:demographics_age_mean a owl:DatatypeProperty ;
+  rdfs:domain :Demographic ;
+  rdfs:label "age mean" ;
+  IAO:0000115 "Mean age of the study population." .
+
+:demographics_race_white_pct a owl:DatatypeProperty ;
+  rdfs:domain :Demographic ;
+  rdfs:label "race white percent" ;
+  IAO:0000115 "Percentage of study population identified as white race." .
+
+:demographics_sex_female_pct a owl:DatatypeProperty ;
+  rdfs:domain :Demographic ;
+  rdfs:label "sex female percent" ;
+  IAO:0000115 "Percentage of study population identified as female." .
+
+:demographics_sex_male_pct a owl:DatatypeProperty ;
+  rdfs:domain :Demographic ;
+  rdfs:label "sex male percent" ;
+  IAO:0000115 "Percentage of study population identified as male." .
+
+
+# =====================================================
+# Prognosis, severity and temporal properties
+# =====================================================
+
+:Prognosis a owl:Class ;
+  rdfs:subClassOf :Entity ;
+  rdfs:label "Prognosis" ;
+  IAO:0000115 "The likely course or outcome of a disease or condition." ;
+  owl:equivalentClass NCIT:C17013 ;
+  skos:exactMatch OMIT:0012333 , MESH:D011379 .
+
+:hasSeverity a owl:ObjectProperty ;
+  rdfs:label "has severity" ;
+  IAO:0000115 "Relates an entity to a severity descriptor." ;
+  owl:inverseOf :isSeverityOf .
+
+:isSeverityOf a owl:ObjectProperty ;
+  rdfs:label "is severity of" ;
+  IAO:0000115 "Inverse of has severity: relates a severity descriptor to the entity it describes." ;
+  owl:inverseOf :hasSeverity .
+
+:hasDuration a owl:ObjectProperty ;
+  rdfs:label "has duration" ;
+  IAO:0000115 "Relates an entity to a duration or time span." ;
+  owl:inverseOf :isDurationOf .
+
+:isDurationOf a owl:ObjectProperty ;
+  rdfs:label "is duration of" ;
+  IAO:0000115 "Inverse of has duration: relates a duration to the entity it describes." ;
+  owl:inverseOf :hasDuration .
+
+# -----------------------------------------------------
+# Clinical relations
+# Local placements of phenotype/symptom relations for easier discovery by clinical users
+# -----------------------------------------------------
+
+:hasPhenotype a owl:ObjectProperty ;
+  rdfs:label "has phenotype" ;
+  rdfs:domain :Entity ;
+  rdfs:range :Phenotype ;
+  IAO:0000115 "Relates an entity to a phenotype it exhibits." ;
+  owl:inverseOf :isPhenotypeOf .
+
+:isPhenotypeOf a owl:ObjectProperty ;
+  rdfs:label "is phenotype of" ;
+  rdfs:domain :Phenotype ;
+  rdfs:range :Entity ;
+  IAO:0000115 "Inverse of has phenotype: relates a phenotype to the entity exhibiting it." ;
+  owl:inverseOf :hasPhenotype .
+
+:hasSymptom a owl:ObjectProperty ;
+  rdfs:subPropertyOf :hasPhenotype ;
+  rdfs:label "has symptom" ;
+  rdfs:domain :Entity ;
+  rdfs:range :Symptom ;
+  IAO:0000115 "Relates an entity to a symptom it exhibits." ;
+  owl:inverseOf :isSymptomOf .
+
+:isSymptomOf a owl:ObjectProperty ;
+  rdfs:label "is symptom of" ;
+  rdfs:domain :Symptom ;
+  rdfs:range :Entity ;
+  IAO:0000115 "Inverse of has symptom: relates a symptom to the entity exhibiting it." ;
+  owl:inverseOf :hasSymptom .
+
+# =====================================================
+# Clinical procedures
+# =====================================================
+
+:hasProcedure a owl:ObjectProperty ;
+  rdfs:label "has procedure" ;
+  rdfs:domain :Entity ;
+  rdfs:range :Procedure ;
+  IAO:0000115 "Relates an entity (e.g., patient, study, experiment) to a clinical or experimental procedure performed." .

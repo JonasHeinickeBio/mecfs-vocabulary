@@ -1,0 +1,121 @@
+# Value-level and cross-property constraints for the document-metadata graph.
+#
+# document_metadata.shacl.ttl checks the *shape* of each node (cardinality, node kind, datatype).
+# This file checks what the values and the relations between properties may be: the format of
+# an identifier, the range of a year, two properties that must agree, a node that carries nothing.
+#
+# Severity follows docs/adr/0003-shacl-severity-ratchet.md: a Violation holds on real output
+# today, a Warning names a gap the pipeline has not closed. Every constraint below was measured
+# against a sample of the 65,963-paper full-src4 graph before it was given a severity; the count
+# that decided it is in the comment above the shape.
+#
+# Core SHACL only: no sh:sparql. mecfs_kg.validation.shacl_shards validates a big graph batch by
+# batch and returns None (so the whole merged graph is validated instead, which does not fit in
+# memory at 37 million triples) as soon as any shape in the directory uses sh:sparql. Three rules
+# that need it were left out for that reason: a paper citing itself, a paper marked a possible
+# duplicate of itself, and two authorships of one paper sharing a position.
+
+@prefix sh:       <http://www.w3.org/ns/shacl#> .
+@prefix xsd:      <http://www.w3.org/2001/XMLSchema#> .
+@prefix rdfs:     <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix dc:       <http://purl.org/dc/elements/1.1/> .
+@prefix schema:   <https://schema.org/> .
+@prefix aid-pais: <https://w3id.org/mecfs/kg/> .
+@prefix mecfssh:  <https://w3id.org/mecfs/kg/shapes/> .
+
+
+#############################################################################
+# Identifier formats on the paper node
+#############################################################################
+
+mecfssh:PaperIdentifierFormatShape a sh:NodeShape ;
+    rdfs:label "Identifier formats on the paper node" ;
+    rdfs:comment "A PMCID is PMC plus digits, a PMID is digits, a Europe PMC id is alphanumeric. A value of another form was written by a parser that took the wrong field, and it would join the wrong records in a later deduplication." ;
+    sh:targetClass aid-pais:DocumentMetadata ;
+    sh:property [
+        sh:path aid-pais:pmcId ;
+        sh:pattern "^PMC[0-9]+$" ;
+        sh:severity sh:Violation ;
+        sh:message "aid-pais:pmcId must be PMC followed by digits." ;
+    ] ;
+    sh:property [
+        sh:path aid-pais:pubmedId ;
+        sh:pattern "^[0-9]{1,9}$" ;
+        sh:severity sh:Violation ;
+        sh:message "aid-pais:pubmedId must be 1 to 9 digits." ;
+    ] ;
+    # A record Europe PMC does not hold gets its own identifier as the key, written as doi:...,
+    # pmid:... or pmcid:... (11,444 of 65,963 papers in full-src4: 11,419, 17 and 7). Allowed, and
+    # not reported: an Info on every such paper made a conforming graph "non-conforming".
+    sh:property [
+        sh:path aid-pais:europePMCId ;
+        sh:pattern "^([A-Za-z0-9_]+|(doi|pmid|pmcid):.+)$" ;
+        sh:severity sh:Violation ;
+        sh:message "aid-pais:europePMCId must be a Europe PMC id (digits, PMC..., PPR...) or, for a record Europe PMC does not hold, doi:..., pmid:... or pmcid:...." ;
+    ] ;
+    sh:property [
+        sh:path schema:datePublished ;
+        sh:pattern "^(1[89][0-9]{2}|20[0-9]{2})(-[0-9]{2}-[0-9]{2})?$" ;
+        sh:severity sh:Violation ;
+        sh:message "schema:datePublished must be a year or a date from 1800 to 2099 (YYYY or YYYY-MM-DD)." ;
+    ] .
+
+
+#############################################################################
+# Properties that must agree
+#############################################################################
+
+mecfssh:PaperConsistencyShape a sh:NodeShape ;
+    rdfs:label "Properties on the paper node that must agree" ;
+    rdfs:comment "Two properties that describe the same fact cannot disagree." ;
+    sh:targetClass aid-pais:DocumentMetadata ;
+    # relevance is none exactly when there is no disease focus
+    sh:or (
+        [ sh:property [ sh:path aid-pais:relevance ; sh:in ( "title" "abstract" "index_term" ) ] ;
+          sh:property [ sh:path aid-pais:diseaseFocus ; sh:minCount 1 ] ]
+        [ sh:property [ sh:path aid-pais:relevance ; sh:in ( "none" ) ] ;
+          sh:property [ sh:path aid-pais:diseaseFocus ; sh:maxCount 0 ] ]
+        [ sh:property [ sh:path aid-pais:relevance ; sh:maxCount 0 ] ;
+          sh:property [ sh:path aid-pais:diseaseFocus ; sh:maxCount 0 ] ]
+    ) ;
+    sh:severity sh:Violation ;
+    sh:message "A paper with a disease focus must have a relevance other than none, and a paper with relevance none must have no disease focus." .
+
+mecfssh:PaperFullTextRouteShape a sh:NodeShape ;
+    rdfs:label "A pmc full-text route needs a PMCID" ;
+    sh:targetClass aid-pais:DocumentMetadata ;
+    sh:or (
+        [ sh:property [ sh:path aid-pais:fullTextRoute ; sh:in ( "publisher" "none" ) ] ]
+        [ sh:property [ sh:path aid-pais:pmcId ; sh:minCount 1 ] ]
+    ) ;
+    sh:severity sh:Violation ;
+    sh:message "A paper whose full-text route is pmc must carry a PMCID." .
+
+
+#############################################################################
+# A node that carries nothing
+#############################################################################
+
+mecfssh:EmptyEnrichmentNodeShape a sh:NodeShape ;
+    rdfs:label "Enrichment nodes that carry something" ;
+    rdfs:comment "A typed blank node with none of the fields its provider fills says only that the provider answered. In the full-src4 graph 31,227 SemanticScholarMetadata nodes are such shells: the Semantic Scholar id sits on the paper (aid-pais:semanticScholarId), and the node the enrichment step builds holds no field. Warning, because the pipeline writes them today. The list is every field these four providers' nodes can carry (rdf_document_metadata.py)." ;
+    sh:targetClass
+        aid-pais:CrossrefMetadata,
+        aid-pais:SemanticScholarMetadata,
+        aid-pais:OpenAlexMetadata,
+        aid-pais:UnpaywallMetadata ;
+    sh:or (
+        [ sh:property [ sh:path dc:identifier ; sh:minCount 1 ] ]
+        [ sh:property [ sh:path dc:title ; sh:minCount 1 ] ]
+        [ sh:property [ sh:path schema:datePublished ; sh:minCount 1 ] ]
+        [ sh:property [ sh:path schema:citationCount ; sh:minCount 1 ] ]
+        [ sh:property [ sh:path schema:isAccessibleForFree ; sh:minCount 1 ] ]
+        [ sh:property [ sh:path schema:accessMode ; sh:minCount 1 ] ]
+        [ sh:property [ sh:path schema:publisher ; sh:minCount 1 ] ]
+        [ sh:property [ sh:path schema:publication ; sh:minCount 1 ] ]
+        [ sh:property [ sh:path schema:volumeNumber ; sh:minCount 1 ] ]
+        [ sh:property [ sh:path schema:isPartOf ; sh:minCount 1 ] ]
+        [ sh:property [ sh:path aid-pais:semanticScholarId ; sh:minCount 1 ] ]
+    ) ;
+    sh:severity sh:Warning ;
+    sh:message "An enrichment node carries none of its provider's fields." .

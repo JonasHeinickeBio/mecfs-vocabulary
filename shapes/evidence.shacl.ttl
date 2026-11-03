@@ -1,0 +1,148 @@
+# SHACL shapes for the evidence layer of the ME/CFS literature knowledge graph.
+#
+# Targets the aid-pais:Evidence nodes produced by
+# ``mecfs_kg.orchestration.stages.assembly``. Validate a run's KG with:
+#   mecfs kg validate runs/<id>
+#
+# What an Evidence node carries today: rdf:type, rdfs:label (the quoted text,
+# truncated to 100 characters for display), nif:anchorOf (the untruncated
+# quote), aid-pais:hasSection, prov:wasGeneratedBy, prov:generatedAtTime, and
+# -- when the extraction carried character spans -- nif:beginIndex/nif:endIndex.
+#
+# ---------------------------------------------------------------------------
+# Evidence anchoring -- what is enforced, and the one part still outstanding
+# ---------------------------------------------------------------------------
+# CLAUDE.md states the project convention: "Evidence anchoring: NIF standard --
+# every mention carries begin/end char offsets + section."
+#
+# The section half is now guaranteed: stages/assembly.py writes hasSection on
+# every evidence node (defaulting to "uncategorized"), so it is a Violation.
+# Attribution (prov:wasGeneratedBy + prov:generatedAtTime) is likewise written
+# unconditionally and is a Violation in provenance.shacl.ttl.
+#
+# The character offsets are still not guaranteed, but the remaining gap is now
+# an external one rather than ours. Entity mentions carry spans, and
+# pipelines/extraction/relations.py now records the offsets of the substring it
+# matched, so rule-based relations are anchored too. What cannot be anchored is
+# evidence taken from a prior provider (EPMC / PubTator, via
+# ExtractStage._add_prior_relations): PreRelation supplies quoted evidence_text
+# with no positions at all, so there is nothing to anchor it to.
+#
+# These therefore stay at sh:Warning by design, not as a to-do. The warning is
+# the useful statement "this quote cannot be traced to a character position in
+# the source document", which is true whenever priors are enabled. Promoting it
+# would fail every such run for a limitation upstream of this project.
+#
+# The nif: IRI used here -- http://www.w3.org/2004/07/13/nif# -- is this
+# repository's own NIF prefix, taken from the dormant emitter
+# pipelines/assembly/rdf.py (NIF_NS, line 25; beginIndex/endIndex/anchorOf at
+# lines 174-176). It is NOT the canonical public NIF 2.0 IRI
+# (http://persistence.uni-leipzig.org/nlp2rdf/ontologies/nif-core#).
+# Consistency with the repo's own emitter wins: a shape that validated a
+# different IRI than the code writes would validate nothing. If the emitter is
+# ever migrated to the canonical IRI, migrate this file in the same commit.
+
+@prefix sh:       <http://www.w3.org/ns/shacl#> .
+@prefix xsd:      <http://www.w3.org/2001/XMLSchema#> .
+@prefix rdfs:     <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix nif:      <http://www.w3.org/2004/07/13/nif#> .
+@prefix aid-pais: <https://w3id.org/mecfs/kg/> .
+@prefix mecfssh:  <https://w3id.org/mecfs/kg/shapes/> .
+
+
+#############################################################################
+# aid-pais:Evidence -- the quoted text an observation rests on
+#############################################################################
+
+mecfssh:EvidenceShape a sh:NodeShape ;
+    rdfs:label "Evidence shape" ;
+    rdfs:comment "Structural contract for aid-pais:Evidence. The one thing an evidence node must have is its quoted text in rdfs:label -- evidence with no text is not evidence. The emitter truncates that text to 100 characters (orchestration/stages/assembly.py, the Evidence rdfs:label write), so labels are short by design and no maximum length is asserted here." ;
+    sh:targetClass aid-pais:Evidence ;
+
+    sh:property [
+        sh:path rdfs:label ;
+        sh:minCount 1 ;
+        sh:maxCount 1 ;
+        sh:datatype xsd:string ;
+        sh:minLength 1 ;
+        sh:severity sh:Violation ;
+        sh:message "Evidence must carry exactly one non-empty rdfs:label holding the quoted supporting text. An evidence node with no text anchors nothing and makes the observation that points at it unverifiable." ;
+    ] .
+
+
+#############################################################################
+# NIF character anchoring -- the project convention the data does not meet yet
+#############################################################################
+
+mecfssh:EvidenceAnchoringShape a sh:NodeShape ;
+    rdfs:label "Evidence NIF anchoring" ;
+    rdfs:comment "The NIF anchoring convention from CLAUDE.md: every evidence span should carry begin/end character offsets plus the section it was drawn from, so a quote can be traced back to an exact position in the source document. hasSection is now emitted unconditionally and is enforced as a Violation; the character offsets depend on the extraction carrying spans, which prior-provider evidence never does, so those stay at Warning. See issue #6." ;
+    sh:targetClass aid-pais:Evidence ;
+
+    sh:property [
+        sh:path nif:beginIndex ;
+        sh:minCount 1 ;
+        sh:maxCount 1 ;
+        sh:datatype xsd:integer ;
+        sh:minInclusive 0 ;
+        sh:severity sh:Warning ;
+        sh:message "Evidence lacks the NIF start offset nif:beginIndex (a non-negative xsd:integer). Entity mentions and rule-based relations are anchored; evidence taken from a prior provider (EPMC / PubTator) is not, because the provider supplies quoted text with no character positions. Without offsets the quote cannot be located in the source document." ;
+    ] ;
+    sh:property [
+        sh:path nif:endIndex ;
+        sh:minCount 1 ;
+        sh:maxCount 1 ;
+        sh:datatype xsd:integer ;
+        sh:minInclusive 0 ;
+        sh:severity sh:Warning ;
+        sh:message "Evidence lacks the NIF end offset nif:endIndex (a non-negative xsd:integer). See nif:beginIndex: prior-provider evidence carries no character positions." ;
+    ] ;
+    sh:property [
+        sh:path aid-pais:hasSection ;
+        sh:minCount 1 ;
+        sh:maxCount 1 ;
+        sh:datatype xsd:string ;
+        sh:minLength 1 ;
+        sh:severity sh:Violation ;
+        sh:message "Evidence lacks aid-pais:hasSection. The assembly stage writes it on every evidence node (falling back to \"uncategorized\"), so a missing section means the node was not built by the current emitter and cannot say where in the paper it came from." ;
+    ] .
+
+
+mecfssh:EvidenceOffsetOrderShape a sh:NodeShape ;
+    rdfs:label "Evidence offsets are ordered" ;
+    rdfs:comment "A character span must start before it ends. Vacuous today (no offsets are emitted), but a Violation rather than a Warning because an inverted span is meaningless rather than merely incomplete." ;
+    sh:targetClass aid-pais:Evidence ;
+    sh:property [
+        sh:path nif:beginIndex ;
+        sh:lessThan nif:endIndex ;
+        sh:severity sh:Violation ;
+        sh:message "Evidence nif:beginIndex must be strictly less than nif:endIndex -- the character span is inverted or empty." ;
+    ] .
+
+
+mecfssh:EvidenceAnchorTextShape a sh:NodeShape ;
+    rdfs:label "Evidence anchor text" ;
+    rdfs:comment "nif:anchorOf, when present, holds the exact substring the offsets delimit. Emitted only by the dormant pipelines/assembly/rdf.py builder today, so this is vacuous in current output." ;
+    sh:targetClass aid-pais:Evidence ;
+    sh:property [
+        sh:path nif:anchorOf ;
+        sh:maxCount 1 ;
+        sh:datatype xsd:string ;
+        sh:minLength 1 ;
+        sh:severity sh:Violation ;
+        sh:message "nif:anchorOf must be a single non-empty string -- the exact text delimited by nif:beginIndex/nif:endIndex." ;
+    ] .
+
+
+#############################################################################
+# Referential integrity for aid-pais:hasEvidence
+#############################################################################
+
+mecfssh:EvidenceReferenceShape a sh:NodeShape ;
+    rdfs:label "hasEvidence points at Evidence" ;
+    rdfs:comment "Anything reached through aid-pais:hasEvidence (from an Observation or an EntityMention) must actually be a typed aid-pais:Evidence node, not a dangling IRI. This holds in current real output, so a breach means the evidence nodes were lost between assembly and serialization." ;
+    sh:targetObjectsOf aid-pais:hasEvidence ;
+    sh:nodeKind sh:IRI ;
+    sh:class aid-pais:Evidence ;
+    sh:severity sh:Violation ;
+    sh:message "aid-pais:hasEvidence must point at an IRI typed aid-pais:Evidence. This target is either a literal/blank node or has no rdf:type in the graph, so the observation's supporting text is unreachable." .

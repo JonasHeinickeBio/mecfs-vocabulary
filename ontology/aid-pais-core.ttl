@@ -1,0 +1,81 @@
+@prefix : <https://w3id.org/mecfs/kg/> .
+@prefix owl: <http://www.w3.org/2002/07/owl#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix dc: <http://purl.org/dc/elements/1.1/> .
+@prefix IAO: <http://purl.obolibrary.org/obo/IAO_> .
+@prefix biolink: <https://w3id.org/biolink/vocab/> .
+@prefix OMIT: <http://purl.obolibrary.org/obo/OMIT_> .
+@prefix UBERON: <http://purl.obolibrary.org/obo/UBERON_> .
+@prefix EFO: <http://www.ebi.ac.uk/efo/> .
+@prefix GO: <http://purl.obolibrary.org/obo/GO_> .
+@prefix CLAO: <http://purl.obolibrary.org/obo/CLAO_> .
+@prefix NCIT: <http://purl.obolibrary.org/obo/NCIT_> .
+@prefix PW: <http://purl.obolibrary.org/obo/PW_> .
+@prefix skos: <http://www.w3.org/2004/02/skos/core#> .
+@prefix BFO: <http://purl.obolibrary.org/obo/BFO_> .
+@prefix STY: <http://purl.bioontology.org/ontology/STY/> .
+@prefix wikidata: <https://www.wikidata.org/entity/> .
+
+
+<https://w3id.org/mecfs/ontology/core> a owl:Ontology ;
+  owl:versionIRI <https://w3id.org/mecfs/ontology/core/2025-09-22> ;
+  owl:imports <http://purl.obolibrary.org/obo/bfo.owl> ;
+  dc:title "AID-PAIS Core Ontology" ;
+  dc:description "Core module for AID-PAIS ontology, providing foundational biomedical entities." .
+
+
+:Entity a owl:Class ;
+  rdfs:label "Entity" ;
+  IAO:0000115 "A general biomedical entity, serving as the root for all domain-specific classes." ;
+  owl:equivalentClass BFO:0000001 .
+
+# -----------------------------------------------------
+# Term expansion (ExpandStage): classes linked concepts generalize to
+# -----------------------------------------------------
+
+:ConceptClass a owl:Class ; rdfs:subClassOf :Entity ; rdfs:label "Concept Class" ; IAO:0000115 "An ontology class, gene/protein family or other grouping that linked concepts generalize to (e.g. Interleukin, Cytokine). Written at the real ontology IRI when its CURIE expands to one." .
+:SemanticType a owl:Class ; rdfs:subClassOf :ConceptClass ; rdfs:label "Semantic Type" ; IAO:0000115 "A UMLS semantic type of a linked concept, e.g. Immunologic Factor." .
+
+:BiologicalProcess a owl:Class ; rdfs:subClassOf :Entity ; rdfs:label "Biological Process" ; IAO:0000115 "A process occurring in a living organism, such as metabolism or cell division." ; owl:equivalentClass NCIT:C17828 .
+:PhysiologicalProcess a owl:Class ; rdfs:subClassOf :BiologicalProcess ; rdfs:label "Physiological Process" ; IAO:0000115 "A normal process that maintains the health and function of an organism." ; owl:equivalentClass biolink:PhysiologicalProcess ; skos:exactMatch OMIT:0026443 , STY:T039 , wikidata:Q30892994 .
+:PathophysiologicalProcess a owl:Class ; rdfs:subClassOf :BiologicalProcess ; rdfs:label "Pathophysiological Process" ; IAO:0000115 "A process associated with disease or abnormal function." ; owl:equivalentClass NCIT:C20632 .
+
+# -----------------------------------------------------
+# Relations (core)
+# These are the core mereological/location relations that are frequently used across modules.
+# -----------------------------------------------------
+
+:partOf a owl:ObjectProperty , owl:TransitiveProperty ;
+  rdfs:label "part of" ;
+  IAO:0000115 "Indicates that one entity is a part of another." ;
+  owl:inverseOf :hasPart .
+
+:hasPart a owl:ObjectProperty , owl:TransitiveProperty ;
+  rdfs:label "has part" ;
+  IAO:0000115 "Indicates that an entity has another entity as a part." ;
+  owl:inverseOf :partOf .
+
+# -----------------------------------------------------
+# Term-expansion relations
+# -----------------------------------------------------
+
+:hasBroaderTerm a owl:ObjectProperty ;
+  rdfs:label "has broader term" ;
+  IAO:0000115 "Relates a concept to a class it generalizes to. Every ancestor is asserted (the transitive closure), so all observations about cytokines are one triple pattern. Subproperty of skos:broaderTransitive." ;
+  rdfs:subPropertyOf skos:broaderTransitive ;
+  rdfs:domain :Entity ;
+  rdfs:range :ConceptClass .
+
+:memberOfFamily a owl:ObjectProperty ;
+  rdfs:label "member of family" ;
+  IAO:0000115 "Relates a gene or protein to a family it belongs to, e.g. an HGNC gene group." ;
+  rdfs:subPropertyOf :hasBroaderTerm ;
+  rdfs:domain :Entity ;
+  rdfs:range :ConceptClass .
+
+:hasSemanticType a owl:ObjectProperty ;
+  rdfs:label "has semantic type" ;
+  IAO:0000115 "Relates a concept to a UMLS semantic type." ;
+  rdfs:subPropertyOf :hasBroaderTerm ;
+  rdfs:domain :Entity ;
+  rdfs:range :SemanticType .

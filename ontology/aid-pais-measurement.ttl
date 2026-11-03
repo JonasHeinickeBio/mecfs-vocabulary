@@ -1,0 +1,66 @@
+@prefix : <https://w3id.org/mecfs/kg/> .
+@prefix owl: <http://www.w3.org/2002/07/owl#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix dc: <http://purl.org/dc/elements/1.1/> .
+@prefix NCIT: <http://purl.obolibrary.org/obo/NCIT_> .
+@prefix SIO: <http://semanticscience.org/resource/SIO_> .
+@prefix IAO: <http://purl.obolibrary.org/obo/IAO_> .
+@prefix OMIT: <http://purl.obolibrary.org/obo/OMIT_> .
+
+<https://w3id.org/mecfs/ontology/measurement> a owl:Ontology ;
+  owl:imports <https://w3id.org/mecfs/ontology/core> ,
+              <https://w3id.org/mecfs/ontology/evidence> ,
+              <http://purl.obolibrary.org/obo/ncit.owl> ,
+              <http://semanticscience.org/ontology/sio.owl> ;
+  owl:versionIRI <https://w3id.org/mecfs/ontology/measurement/2025-09-22> ;
+  dc:title "AID-PAIS Measurement Ontology" ;
+  dc:description "Measurement module for AID-PAIS ontology, covering observations, assays, and measurement properties." .
+
+## `:Observation` is *not* declared here even though this module's own
+## properties (`:hasObservation`, `:hasTimepoint`) reference it: it was
+## previously redeclared in this file as `rdfs:subClassOf :Entity ;
+## owl:equivalentClass OMIT:0019433`, conflicting with `aid-pais-evidence.ttl`'s
+## `rdfs:subClassOf :Evidence ; owl:equivalentClass NCIT:C25598`. Both
+## triples land in the same merged graph `validation/ontology.py`'s
+## `load_merged_ontology()` builds and feeds to the Pellet reasoner in
+## `mecfs ontology-export` -- two `owl:equivalentClass` assertions on one
+## class force the reasoner to entail `OMIT:0019433 owl:equivalentClass
+## NCIT:C25598`, an unintended cross-ontology identity nobody asserted.
+## `evidence.ttl`'s definition (`Observation` as a kind of `Evidence`,
+## matching the evidence-centric KG design in docs/assembly/ASSEMBLY.md)
+## is the one every RDF builder's output actually conforms to; this module
+## only needs the class *name* to resolve, which the merged graph provides.
+:Assay a owl:Class ; rdfs:subClassOf :Entity ; rdfs:label "Assay" ; IAO:0000115 "A procedure or test to measure a specific property or analyte." ;
+ owl:equivalentClass NCIT:C60819 .
+:hasValue a owl:DatatypeProperty ; rdfs:label "has value" ; IAO:0000115 "Relates an observation or assay to its measured value." ;
+  owl:equivalentProperty SIO:000300 .
+:hasUnit a owl:ObjectProperty ; rdfs:label "has unit" ; IAO:0000115 "Relates a value to its unit of measurement." ;
+  owl:equivalentProperty SIO:000221 .
+:hasTimepoint a owl:DatatypeProperty ; rdfs:label "has timepoint" ; IAO:0000115 "Relates an observation to the time at which it was made." .
+
+:hasObservation a owl:ObjectProperty ;
+  rdfs:domain :Assay ;
+  rdfs:range :Observation ;
+  rdfs:label "has observation" ;
+  IAO:0000115 "Relates an assay to an observation it produces or measures." .
+
+:Specimen a owl:Class ;
+  rdfs:subClassOf :Entity ;
+  rdfs:label "Specimen" ;
+  IAO:0000115 "A sample or material taken from a biological entity for analysis." .
+
+:Material a owl:Class ;
+  rdfs:subClassOf :Entity ;
+  rdfs:label "Material" ;
+  IAO:0000115 "A physical substance or matter used or produced in an assay or experiment." .
+
+:Unit a owl:Class ;
+  rdfs:subClassOf :Entity ;
+  rdfs:label "Unit" ;
+  IAO:0000115 "A unit of measurement for quantitative values (e.g., mg/dL, pg/mL)." .
+
+:hasAssay a owl:ObjectProperty ;
+  rdfs:label "has assay" ;
+  rdfs:domain :Study ;
+  rdfs:range :Assay ;
+  IAO:0000115 "Relates a study or experiment to an assay that was performed as part of it." .

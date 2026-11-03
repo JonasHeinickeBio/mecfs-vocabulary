@@ -1,0 +1,51 @@
+# Term-expansion shapes (ExpandStage -> pipelines/assembly/expansion_rdf.py).
+#
+# Expansion edges sit on the *concept node*, never on an Observation:
+#   <entity> aid-pais:hasBroaderTerm <class>     every ancestor (transitive closure)
+#   <entity> aid-pais:memberOfFamily <class>     gene/protein families (subproperty)
+#   <entity> aid-pais:hasSemanticType <sty>      UMLS semantic types   (subproperty)
+#   <class>  skos:broader <parent class>         direct hierarchy
+#
+# Severity follows docs/adr/0003-shacl-severity-ratchet.md. What the emitter always
+# guarantees is a Violation; what depends on the source returning a label is a Warning
+# until a run shows it never misses.
+
+@prefix sh:       <http://www.w3.org/ns/shacl#> .
+@prefix rdfs:     <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix skos:     <http://www.w3.org/2004/02/skos/core#> .
+@prefix aid-pais: <https://w3id.org/mecfs/kg/> .
+@prefix mecfssh:  <https://w3id.org/mecfs/kg/shapes/> .
+
+mecfssh:BroaderTermTargetShape a sh:NodeShape ;
+    rdfs:label "Broader-term targets are concept classes" ;
+    rdfs:comment "Whatever hasBroaderTerm / memberOfFamily points at is a ConceptClass, and hasSemanticType points at a SemanticType. The emitter types every class node it writes, so a miss is a builder bug." ;
+    sh:targetSubjectsOf aid-pais:hasBroaderTerm ;
+    sh:property [
+        sh:path aid-pais:hasBroaderTerm ;
+        sh:class aid-pais:ConceptClass ;
+        sh:nodeKind sh:IRI ;
+        sh:severity sh:Violation ;
+        sh:message "aid-pais:hasBroaderTerm must point at an aid-pais:ConceptClass IRI." ;
+    ] ;
+    sh:property [
+        sh:path aid-pais:hasSemanticType ;
+        sh:class aid-pais:SemanticType ;
+        sh:severity sh:Violation ;
+        sh:message "aid-pais:hasSemanticType must point at an aid-pais:SemanticType." ;
+    ] .
+
+mecfssh:ConceptClassShape a sh:NodeShape ;
+    rdfs:label "Concept class" ;
+    sh:targetClass aid-pais:ConceptClass ;
+    sh:property [
+        sh:path rdfs:label ;
+        sh:minCount 1 ;
+        sh:severity sh:Warning ;
+        sh:message "A concept class should carry an rdfs:label (OLS and the seed always supply one; an HGNC group or UMLS type without a name does not)." ;
+    ] ;
+    sh:property [
+        sh:path skos:broader ;
+        sh:nodeKind sh:IRI ;
+        sh:severity sh:Violation ;
+        sh:message "skos:broader between concept classes must link IRIs." ;
+    ] .

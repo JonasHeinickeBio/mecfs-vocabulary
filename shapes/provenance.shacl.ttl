@@ -1,0 +1,167 @@
+# Cross-cutting provenance shapes for the ME/CFS literature knowledge graph.
+#
+# The per-class provenance requirements live with their classes
+# (document_metadata.shacl.ttl, observation.shacl.ttl). This file holds the
+# rules that apply wherever a PROV predicate appears, plus the provenance
+# *goals* the graph does not meet yet. Validate a run's KG with:
+#   mecfs kg validate runs/<id>
+#
+# ---------------------------------------------------------------------------
+# prov:wasGeneratedBy has two incompatible object kinds -- read this first
+# ---------------------------------------------------------------------------
+# There is deliberately NO global sh:nodeKind on prov:wasGeneratedBy, because
+# the emitters disagree about what it points at:
+#
+#   * aid-pais:DocumentMetadata  -> a plain LITERAL pipeline name,
+#                                   "document-metadata-extraction-pipeline"
+#                                   (pipelines/assembly/rdf_document_metadata.py)
+#   * aid-pais:KnowledgeGraph    -> a plain LITERAL, "mecfs-kg-acquisition-pipeline"
+#   * aid-pais:Observation /
+#     aid-pais:EntityMention     -> the source paper IRI
+#                                   (orchestration/stages/assembly.py)
+#
+# Both forms occur in the same serialized graph. nodeKind is therefore
+# constrained per shape, never here. prov:hadPrimarySource has the same split
+# (a literal source name on the parsing-ensemble node, an IRI in the serving
+# exporter), so it is left unconstrained too.
+#
+# ---------------------------------------------------------------------------
+# Folded in from the deleted validation/shacl/provenance.shacl.ttl
+# ---------------------------------------------------------------------------
+# That orphaned file (never loaded -- the engine reads validation/shapes/, not
+# validation/shacl/) required :doi / :pubmed_id / :full_text_url, :extracted_by
+# and :extraction_date on every :Evidence node. None of those five predicates
+# exists anywhere in this codebase, and real Evidence nodes carry only
+# rdf:type + rdfs:label, so as written it failed 100% of real data. Its intent
+# -- "an evidence node should say where it came from and who extracted it" --
+# is worth keeping, so it is restated below as
+# mecfssh:EvidenceAttributionShape using the project's actual PROV vocabulary.
+# Promoted to sh:Violation: stages/assembly.py now writes both predicates on
+# every evidence node it builds.
+
+@prefix sh:       <http://www.w3.org/ns/shacl#> .
+@prefix xsd:      <http://www.w3.org/2001/XMLSchema#> .
+@prefix rdfs:     <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix prov:     <http://www.w3.org/ns/prov#> .
+@prefix dcterms:  <http://purl.org/dc/terms/> .
+@prefix schema:   <https://schema.org/> .
+@prefix aid-pais: <https://w3id.org/mecfs/kg/> .
+@prefix mecfssh:  <https://w3id.org/mecfs/kg/shapes/> .
+
+
+#############################################################################
+# Rules that hold wherever a PROV predicate appears
+#############################################################################
+
+mecfssh:GenerationActivityShape a sh:NodeShape ;
+    rdfs:label "Single generating activity" ;
+    rdfs:comment "A node is generated once. Every emitter in this project writes exactly one prov:wasGeneratedBy per node, so more than one means two builders wrote over each other and the provenance trail is ambiguous." ;
+    sh:targetSubjectsOf prov:wasGeneratedBy ;
+    sh:property [
+        sh:path prov:wasGeneratedBy ;
+        sh:maxCount 1 ;
+        sh:severity sh:Violation ;
+        sh:message "A node must record at most one prov:wasGeneratedBy. Several values means two builders claimed the same node and it is no longer possible to say which pipeline produced it." ;
+    ] .
+
+
+mecfssh:GenerationTimeShape a sh:NodeShape ;
+    rdfs:label "Generation timestamp" ;
+    rdfs:comment "prov:generatedAtTime is written with an explicit xsd:dateTime datatype by every emitter (the document node's retrieved_at and the parsing-ensemble node's parsed_at). An untyped or differently typed timestamp cannot be compared or ordered." ;
+    sh:targetSubjectsOf prov:generatedAtTime ;
+    sh:property [
+        sh:path prov:generatedAtTime ;
+        sh:maxCount 1 ;
+        sh:datatype xsd:dateTime ;
+        sh:severity sh:Violation ;
+        sh:message "prov:generatedAtTime must be a single xsd:dateTime literal. A bare string or a date-only value breaks any time-ordered query over the run." ;
+    ] .
+
+
+mecfssh:DerivationShape a sh:NodeShape ;
+    rdfs:label "Derivation and attribution targets" ;
+    rdfs:comment "prov:wasDerivedFrom and prov:wasAttributedTo always point at an entity or agent IRI (Europe PMC, an ORCID). Unlike prov:wasGeneratedBy these have a single object kind across all emitters, so nodeKind can be constrained globally." ;
+    sh:targetSubjectsOf prov:wasDerivedFrom ;
+    sh:property [
+        sh:path prov:wasDerivedFrom ;
+        sh:nodeKind sh:IRI ;
+        sh:severity sh:Violation ;
+        sh:message "prov:wasDerivedFrom must point at an IRI identifying the source entity (e.g. https://europepmc.org/), not a literal." ;
+    ] ;
+    sh:property [
+        sh:path prov:wasAttributedTo ;
+        sh:nodeKind sh:IRI ;
+        sh:severity sh:Violation ;
+        sh:message "prov:wasAttributedTo must point at an agent IRI (e.g. an ORCID), not a literal." ;
+    ] .
+
+
+#############################################################################
+# Provenance of the observation layer
+#############################################################################
+
+mecfssh:ObservationProvenanceShape a sh:NodeShape ;
+    rdfs:label "Observation provenance resolves to a paper" ;
+    rdfs:comment "An observation's prov:wasGeneratedBy points at the paper it was extracted from, so that paper should be described in the same graph as an aid-pais:DocumentMetadata node. This holds in current real output, but it holds only because those runs included DocumentMetadataStage -- an observations-only build would legitimately produce a graph without the paper nodes, so this is a Warning rather than a Violation." ;
+    sh:targetClass aid-pais:Observation, aid-pais:EntityMention ;
+    sh:property [
+        sh:path prov:wasGeneratedBy ;
+        sh:class aid-pais:DocumentMetadata ;
+        sh:severity sh:Warning ;
+        sh:message "prov:wasGeneratedBy points at a paper IRI that is not typed aid-pais:DocumentMetadata in this graph: the observation's source document is a dangling reference. Run DocumentMetadataStage, or merge the document-metadata graph before querying." ;
+    ] .
+
+
+mecfssh:EvidenceAttributionShape a sh:NodeShape ;
+    rdfs:label "Evidence extraction attribution" ;
+    rdfs:comment "Restates the intent of the deleted validation/shacl/provenance.shacl.ttl in the vocabulary this project actually uses: an evidence node says which document produced it and when. The assembly stage now writes prov:wasGeneratedBy (the source paper) and prov:generatedAtTime (the extraction timestamp, falling back to the run timestamp) on every evidence node, so this is enforced as a Violation. Reported once per node rather than once per missing predicate, to keep the report readable." ;
+    sh:targetClass aid-pais:Evidence ;
+    sh:severity sh:Violation ;
+    sh:message "Evidence node records no extraction provenance: it carries neither prov:wasGeneratedBy (the source document) nor prov:generatedAtTime. The assembly stage writes both unconditionally, so a node missing them was not produced by the current emitter and cannot be attributed to a paper or a run." ;
+    sh:and (
+        [ sh:property [ sh:path prov:wasGeneratedBy  ; sh:minCount 1 ] ]
+        [ sh:property [ sh:path prov:generatedAtTime ; sh:minCount 1 ] ]
+    ) .
+
+
+#############################################################################
+# Provenance of the graph as a whole
+#############################################################################
+
+mecfssh:KnowledgeGraphProvenanceShape a sh:NodeShape ;
+    rdfs:label "Knowledge graph provenance" ;
+    rdfs:comment "The single aid-pais:KnowledgeGraph node that DocumentMetadataRDFBuilder writes when a curated source label is configured. It names the dataset, counts its papers and records the pipeline that built it. Absent from runs with no curated source label, so these constraints are vacuous in most graphs." ;
+    sh:targetClass aid-pais:KnowledgeGraph ;
+    sh:property [
+        sh:path rdfs:label ;
+        sh:minCount 1 ;
+        sh:maxCount 1 ;
+        sh:datatype xsd:string ;
+        sh:minLength 1 ;
+        sh:severity sh:Violation ;
+        sh:message "The KnowledgeGraph node must carry exactly one non-empty rdfs:label naming the dataset." ;
+    ] ;
+    sh:property [
+        sh:path prov:wasGeneratedBy ;
+        sh:minCount 1 ;
+        sh:maxCount 1 ;
+        sh:nodeKind sh:Literal ;
+        sh:datatype xsd:string ;
+        sh:severity sh:Violation ;
+        sh:message "The KnowledgeGraph node must record exactly one prov:wasGeneratedBy naming the pipeline, as a plain literal (e.g. 'mecfs-kg-acquisition-pipeline')." ;
+    ] ;
+    sh:property [
+        sh:path schema:count ;
+        sh:maxCount 1 ;
+        sh:datatype xsd:integer ;
+        sh:minInclusive 0 ;
+        sh:severity sh:Violation ;
+        sh:message "https://schema.org/count on the KnowledgeGraph node must be a single non-negative xsd:integer -- the number of papers in the graph." ;
+    ] ;
+    sh:property [
+        sh:path dcterms:source ;
+        sh:maxCount 1 ;
+        sh:datatype xsd:string ;
+        sh:severity sh:Violation ;
+        sh:message "dcterms:source must be a single string literal naming the curated source." ;
+    ] .

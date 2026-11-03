@@ -1,0 +1,477 @@
+@prefix : <https://w3id.org/mecfs/kg/> .
+@prefix owl: <http://www.w3.org/2002/07/owl#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+@prefix dc: <http://purl.org/dc/elements/1.1/> .
+@prefix IAO: <http://purl.obolibrary.org/obo/IAO_> .
+
+<https://w3id.org/mecfs/ontology/bibliometrics> a owl:Ontology ;
+  owl:imports <https://w3id.org/mecfs/ontology/core> ,
+              <https://w3id.org/mecfs/ontology/evidence> ;
+  owl:versionIRI <https://w3id.org/mecfs/ontology/bibliometrics/2026-09-13> ;
+  dc:title "AID-PAIS Bibliometrics and Document-Metadata Ontology" ;
+  dc:description "Document-level metadata, per-source enrichment records and the citation scores the knowledge graph carries. These terms were emitted by pipelines/assembly/rdf_document_metadata.py long before they were declared anywhere, so the graph used a vocabulary the ontology could not describe and OWL reasoning had no domain or range to work with. This module closes that gap." .
+
+#############################################################################
+# The paper node, and the knowledge graph it belongs to
+#############################################################################
+
+:DocumentMetadata a owl:Class ; rdfs:subClassOf :Entity ; rdfs:label "Document metadata" ;
+  IAO:0000115 "A bibliographic record for one paper: the central node of the document-metadata knowledge graph." .
+
+:KnowledgeGraph a owl:Class ; rdfs:label "Knowledge graph" ;
+  IAO:0000115 "A generated knowledge-graph artifact, carrying build provenance." .
+
+#############################################################################
+# Per-source enrichment records
+#
+# Each is a distinct class rather than one generic node, so a consumer can ask
+# which source a figure came from -- the same paper routinely carries several
+# disagreeing citation counts.
+#############################################################################
+
+:EnrichmentRecord a owl:Class ; rdfs:subClassOf :Entity ; rdfs:label "Enrichment record" ;
+  IAO:0000115 "Metadata retrieved for a paper from one external source." .
+
+:CrossrefMetadata a owl:Class ; rdfs:subClassOf :EnrichmentRecord ; rdfs:label "Crossref metadata" ;
+  IAO:0000115 "Enrichment retrieved from Crossref." .
+:SemanticScholarMetadata a owl:Class ; rdfs:subClassOf :EnrichmentRecord ; rdfs:label "Semantic Scholar metadata" ;
+  IAO:0000115 "Enrichment retrieved from Semantic Scholar." .
+:OpenAlexMetadata a owl:Class ; rdfs:subClassOf :EnrichmentRecord ; rdfs:label "OpenAlex metadata" ;
+  IAO:0000115 "Enrichment retrieved from OpenAlex." .
+:UnpaywallMetadata a owl:Class ; rdfs:subClassOf :EnrichmentRecord ; rdfs:label "Unpaywall metadata" ;
+  IAO:0000115 "Open-access status retrieved from Unpaywall." .
+:DataCiteMetadata a owl:Class ; rdfs:subClassOf :EnrichmentRecord ; rdfs:label "DataCite metadata" ;
+  IAO:0000115 "Enrichment retrieved from DataCite." .
+:ICiteMetadata a owl:Class ; rdfs:subClassOf :EnrichmentRecord ; rdfs:label "iCite metadata" ;
+  IAO:0000115 "NIH iCite bibliometrics. Unlike the other sources this one contributes field-normalised measures rather than another raw citation count." .
+:CitationInfo a owl:Class ; rdfs:subClassOf :EnrichmentRecord ; rdfs:label "Citation info" ;
+  IAO:0000115 "Aggregated citation figures for a paper, drawn from Europe PMC." .
+
+:hasCrossrefMetadata a owl:ObjectProperty ; rdfs:domain :DocumentMetadata ; rdfs:range :CrossrefMetadata ; rdfs:label "has Crossref metadata" .
+:hasSemanticScholarMetadata a owl:ObjectProperty ; rdfs:domain :DocumentMetadata ; rdfs:range :SemanticScholarMetadata ; rdfs:label "has Semantic Scholar metadata" .
+:hasOpenAlexMetadata a owl:ObjectProperty ; rdfs:domain :DocumentMetadata ; rdfs:range :OpenAlexMetadata ; rdfs:label "has OpenAlex metadata" .
+:hasUnpaywallMetadata a owl:ObjectProperty ; rdfs:domain :DocumentMetadata ; rdfs:range :UnpaywallMetadata ; rdfs:label "has Unpaywall metadata" .
+:hasDataCiteMetadata a owl:ObjectProperty ; rdfs:domain :DocumentMetadata ; rdfs:range :DataCiteMetadata ; rdfs:label "has DataCite metadata" .
+:hasICiteMetadata a owl:ObjectProperty ; rdfs:domain :DocumentMetadata ; rdfs:range :ICiteMetadata ; rdfs:label "has iCite metadata" .
+:hasCitationInfo a owl:ObjectProperty ; rdfs:domain :DocumentMetadata ; rdfs:range :CitationInfo ; rdfs:label "has citation info" .
+:hasOrganization a owl:ObjectProperty ; rdfs:domain :DocumentMetadata ; rdfs:range :Organization ; rdfs:label "has organization" .
+
+#############################################################################
+# The scores
+#
+# Raw counts and field-normalised ratios are deliberately separate properties.
+# A count is only comparable within a field and year; a ratio is built to be
+# comparable across both. Conflating them is the usual way citation figures get
+# misread, so the domain of each ratio is the source that computed it.
+#############################################################################
+
+:relativeCitationRatio a owl:DatatypeProperty ;
+  rdfs:domain :ICiteMetadata ; rdfs:range xsd:double ; rdfs:label "relative citation ratio" ;
+  IAO:0000115 "NIH Relative Citation Ratio. Field- and year-normalised so that 1.0 is the average for NIH-funded papers in the same field and year; comparable across specialities, unlike a raw count." .
+
+:fieldCitationRatio a owl:DatatypeProperty ;
+  rdfs:domain :ICiteMetadata ; rdfs:range xsd:double ; rdfs:label "field citation ratio" ;
+  IAO:0000115 "Citation rate relative to other papers in the same field." .
+
+:expectedCitations a owl:DatatypeProperty ;
+  rdfs:domain :ICiteMetadata ; rdfs:range xsd:double ; rdfs:label "expected citations" ;
+  IAO:0000115 "Citations expected for a paper of this field and age; the denominator behind the relative citation ratio." .
+
+:isResearchArticle a owl:DatatypeProperty ;
+  rdfs:domain :ICiteMetadata ; rdfs:range xsd:boolean ; rdfs:label "is research article" ;
+  IAO:0000115 "Whether iCite classifies the paper as a research article; its metrics are not meaningful for editorials or errata." .
+
+:provisionalMetrics a owl:DatatypeProperty ;
+  rdfs:domain :ICiteMetadata ; rdfs:range xsd:boolean ; rdfs:label "provisional metrics" ;
+  IAO:0000115 "Set when the source considers the figures still unstable because the paper is too recent. Consumers computing trends should exclude these." .
+
+:citationPercentileSource a owl:DatatypeProperty ;
+  rdfs:range xsd:string ; rdfs:label "citation percentile source" ;
+  IAO:0000115 "Which provider computed a citationPercentile. Required because Europe PMC and NIH iCite both supply one on the same paper, against different reference populations, and the two are not interchangeable." .
+
+:citationCentrality a owl:DatatypeProperty ;
+  rdfs:domain :CitationInfo ; rdfs:range xsd:double ; rdfs:label "citation centrality" ;
+  IAO:0000115 "Centrality of a paper within the citation network of the corpus." .
+
+:citationNetworkSize a owl:DatatypeProperty ;
+  rdfs:domain :CitationInfo ; rdfs:range xsd:integer ; rdfs:label "citation network size" ;
+  IAO:0000115 "Number of papers in the citation neighbourhood considered." .
+
+:referencesCount a owl:DatatypeProperty ;
+  rdfs:domain :CitationInfo ; rdfs:range xsd:integer ; rdfs:label "references count" ;
+  IAO:0000115 "Number of references a paper makes. Distinct from :referenceCount in the evidence module, which is retained for the pre-existing emitter; new code should use this one." .
+
+#############################################################################
+# Identifiers carried on the paper node
+#############################################################################
+
+:europePMCId a owl:DatatypeProperty ; rdfs:domain :DocumentMetadata ; rdfs:range xsd:string ; rdfs:label "Europe PMC ID" .
+:pmcId a owl:DatatypeProperty ; rdfs:domain :DocumentMetadata ; rdfs:range xsd:string ; rdfs:label "PMC ID" .
+:openAlexId a owl:DatatypeProperty ; rdfs:label "OpenAlex ID" .
+:semanticScholarId a owl:DatatypeProperty ; rdfs:label "Semantic Scholar ID" .
+:semanticScholarCorpusId a owl:DatatypeProperty ; rdfs:label "Semantic Scholar Corpus ID" .
+:rorId a owl:DatatypeProperty ; rdfs:domain :Organization ; rdfs:range xsd:string ; rdfs:label "ROR ID" .
+:authorString a owl:DatatypeProperty ; rdfs:domain :DocumentMetadata ; rdfs:range xsd:string ; rdfs:label "author string" ;
+  IAO:0000115 "The author list as a single display string, kept alongside the structured Person nodes." .
+
+#############################################################################
+# Access and full text
+#############################################################################
+
+:fullTextAvailable a owl:DatatypeProperty ; rdfs:domain :DocumentMetadata ; rdfs:range xsd:boolean ; rdfs:label "full text available" .
+:fullTextSource a owl:DatatypeProperty ; rdfs:domain :DocumentMetadata ; rdfs:range xsd:string ; rdfs:label "full text source" .
+:hasPDF a owl:DatatypeProperty ; rdfs:domain :DocumentMetadata ; rdfs:range xsd:boolean ; rdfs:label "has PDF" .
+:enrichmentRetrievedAt a owl:DatatypeProperty ; rdfs:domain :DocumentMetadata ; rdfs:range xsd:dateTime ; rdfs:label "enrichment retrieved at" .
+
+#############################################################################
+# Parsing-ensemble provenance
+#############################################################################
+
+:ParsingEnsembleResult a owl:Class ; rdfs:subClassOf :Entity ; rdfs:label "Parsing ensemble result" ;
+  IAO:0000115 "Outcome of the multi-parser ensemble for one document." .
+:FieldVoteResult a owl:Class ; rdfs:subClassOf :Entity ; rdfs:label "Field vote result" ;
+  IAO:0000115 "Per-field vote within a parsing ensemble." .
+
+:hasParsingEnsemble a owl:ObjectProperty ; rdfs:domain :DocumentMetadata ; rdfs:range :ParsingEnsembleResult ; rdfs:label "has parsing ensemble" .
+:hasFieldVote a owl:ObjectProperty ; rdfs:domain :ParsingEnsembleResult ; rdfs:range :FieldVoteResult ; rdfs:label "has field vote" .
+:parser a owl:DatatypeProperty ; rdfs:range xsd:string ; rdfs:label "parser" .
+:processingTimeSeconds a owl:DatatypeProperty ; rdfs:domain :ParsingEnsembleResult ; rdfs:range xsd:double ; rdfs:label "processing time (s)" .
+:fieldName a owl:DatatypeProperty ; rdfs:domain :FieldVoteResult ; rdfs:range xsd:string ; rdfs:label "field name" .
+:winner a owl:DatatypeProperty ; rdfs:domain :FieldVoteResult ; rdfs:range xsd:string ; rdfs:label "winner" .
+:hasConsensus a owl:DatatypeProperty ; rdfs:domain :FieldVoteResult ; rdfs:range xsd:boolean ; rdfs:label "has consensus" .
+
+#############################################################################
+# Ontology-mapping provenance
+#############################################################################
+
+:conceptId a owl:DatatypeProperty ; rdfs:domain :OntologyMapping ; rdfs:range xsd:string ; rdfs:label "concept ID" .
+:conceptName a owl:DatatypeProperty ; rdfs:domain :OntologyMapping ; rdfs:range xsd:string ; rdfs:label "concept name" .
+:mappingMethod a owl:DatatypeProperty ; rdfs:domain :OntologyMapping ; rdfs:range xsd:string ; rdfs:label "mapping method" .
+:ontology a owl:DatatypeProperty ; rdfs:domain :OntologyMapping ; rdfs:range xsd:string ; rdfs:label "ontology" .
+:sourceField a owl:DatatypeProperty ; rdfs:domain :OntologyMapping ; rdfs:range xsd:string ; rdfs:label "source field" .
+:sourceSpan a owl:DatatypeProperty ; rdfs:domain :OntologyMapping ; rdfs:range xsd:string ; rdfs:label "source span" .
+
+#############################################################################
+# Organization detail
+#############################################################################
+
+:types a owl:DatatypeProperty ; rdfs:domain :Organization ; rdfs:range xsd:string ; rdfs:label "types" .
+:domains a owl:DatatypeProperty ; rdfs:domain :Organization ; rdfs:range xsd:string ; rdfs:label "domains" .
+:status a owl:DatatypeProperty ; rdfs:domain :Organization ; rdfs:range xsd:string ; rdfs:label "status" .
+
+# BEGIN GENERATED: document graph vocabulary
+#############################################################################
+# The document graph (schemas/document_graph_vocabulary.py)
+#############################################################################
+
+:Authorship a owl:Class ; rdfs:subClassOf :Entity ; rdfs:label "Authorship" ;
+  IAO:0000115 "One person's position on one paper, with institutions and affiliation text." .
+:MeshHeading a owl:Class ; rdfs:subClassOf :Entity ; rdfs:label "MeSH heading" ;
+  IAO:0000115 "A MeSH descriptor assigned to a paper, shared by every paper that carries it." .
+:Topic a owl:Class ; rdfs:subClassOf :Entity ; rdfs:label "Topic" ;
+  IAO:0000115 "An OpenAlex topic assigned to a paper." .
+:Grant a owl:Class ; rdfs:subClassOf :Entity ; rdfs:label "Grant" ;
+  IAO:0000115 "A funding award, shared by every paper that acknowledges it." .
+:Funder a owl:Class ; rdfs:subClassOf :Entity ; rdfs:label "Funder" ;
+  IAO:0000115 "A funding agency, one node per name folded for case and punctuation." .
+:Keyword a owl:Class ; rdfs:subClassOf :Entity ; rdfs:label "Keyword" ;
+  IAO:0000115 "An author keyword, lower-cased and shared by every paper that uses it (labelled with the corpus's most common spelling)." .
+:DocumentSection a owl:Class ; rdfs:subClassOf :Entity ; rdfs:label "Document section" ;
+  IAO:0000115 "One section of a paper's parsed full text, described but not quoted: heading, path, kind and sizes. The text is kept in a side store." .
+:DocumentTable a owl:Class ; rdfs:subClassOf :Entity ; rdfs:label "Document table" ;
+  IAO:0000115 "One table of a paper's full text: caption, shape and column headers. The cell grid is kept in a side store." .
+:ResourceReference a owl:Class ; rdfs:subClassOf :Entity ; rdfs:label "Resource reference" ;
+  IAO:0000115 "A trial or review registration, code or data repository, accession number, named cohort or classification code a paper's text names." .
+:ExternalWork a owl:Class ; rdfs:subClassOf :Entity ; rdfs:label "External work" ;
+  IAO:0000115 "A work a paper cites that is not a paper of the corpus: DOI and/or PMID and year only." .
+:CitationContext a owl:Class ; rdfs:subClassOf :Entity ; rdfs:label "Citation context" ;
+  IAO:0000115 "The sentence around an in-text citation of a corpus paper, with the section it sits in." .
+:RecordRelation a owl:Class ; rdfs:subClassOf :Entity ; rdfs:label "Record relation" ;
+  IAO:0000115 "A Europe PMC link between records: preprint and article, erratum, retraction, expression of concern, comment, update, version." .
+:IdentityLink a owl:Class ; rdfs:subClassOf :Entity ; rdfs:label "Identity link" ;
+  IAO:0000115 "Why two records of the corpus are linked as the same study or as possibly the same paper: the kind of link and the reason." .
+:Substance a owl:Class ; rdfs:subClassOf :Entity ; rdfs:label "Substance" ;
+  IAO:0000115 "A chemical substance a paper is indexed with (MeSH substance or supplementary concept), with its CAS/EC registry number when it has one." .
+:DiscoverySource a owl:Class ; rdfs:subClassOf :Entity ; rdfs:label "Discovery source" ;
+  IAO:0000115 "A place papers are discovered: Europe PMC, PubMed, OpenAlex or Semantic Scholar." .
+:SourceHit a owl:Class ; rdfs:subClassOf :Entity ; rdfs:label "Source hit" ;
+  IAO:0000115 "One discovery source's record of a paper: the source, the id it uses for the paper, and the kind of record it returned." .
+:FullTextLink a owl:Class ; rdfs:subClassOf :Entity ; rdfs:label "Full-text link" ;
+  IAO:0000115 "A place Europe PMC lists where a paper's full text can be read, with its document style and access." .
+:OpenAccessLocation a owl:Class ; rdfs:subClassOf :Entity ; rdfs:label "Open-access location" ;
+  IAO:0000115 "A copy of a paper Unpaywall found: publisher or repository, with version, licence." .
+:TextMinedTerm a owl:Class ; rdfs:subClassOf :Entity ; rdfs:label "Text-mined term" ;
+  IAO:0000115 "A concept Europe PMC / PubTator3 text mining found in a paper (disease, gene, chemical, organism, symptom, ...), shared across papers." .
+:TermOccurrence a owl:Class ; rdfs:subClassOf :Entity ; rdfs:label "Term occurrence" ;
+  IAO:0000115 "How often, and in which sections, one paper mentions a text-mined term; written for terms mentioned often enough to matter." .
+
+:corpusUid a owl:DatatypeProperty ; rdfs:domain :DocumentMetadata ; rdfs:range xsd:string ; rdfs:label "corpus UID" ;
+  IAO:0000115 "The sticky corpus identifier (aidpais:<hash>) the paper IRI is minted from; it does not change when a DOI or PMCID arrives later." .
+:sourceDatabase a owl:DatatypeProperty ; rdfs:domain :DocumentMetadata ; rdfs:range xsd:string ; rdfs:label "source database" ;
+  IAO:0000115 "Europe PMC source code of the record: MED, PMC, PPR (preprint), PAT (patent), ETH, ..." .
+:recordKind a owl:DatatypeProperty ; rdfs:domain :DocumentMetadata ; rdfs:range xsd:string ; rdfs:label "record kind" ;
+  IAO:0000115 "journal_article, review, systematic_review, randomized_trial, case_report, editorial, notice (erratum, retraction), preprint, patent, thesis or other." .
+:relevance a owl:DatatypeProperty ; rdfs:domain :DocumentMetadata ; rdfs:range xsd:string ; rdfs:label "relevance" ;
+  IAO:0000115 "Where the ME/CFS or Long COVID terms occur in the paper's metadata: title, abstract, index_term or none." .
+:diseaseFocus a owl:DatatypeProperty ; rdfs:domain :DocumentMetadata ; rdfs:range xsd:string ; rdfs:label "disease focus" ;
+  IAO:0000115 "me_cfs, long_covid or both, judged from title and abstract." .
+:licenseClass a owl:DatatypeProperty ; rdfs:domain :DocumentMetadata ; rdfs:range xsd:string ; rdfs:label "licence class" ;
+  IAO:0000115 "open, share_alike, non_commercial, no_derivatives, non_commercial_no_derivatives, other or unlicensed." .
+:fullTextRoute a owl:DatatypeProperty ; rdfs:domain :DocumentMetadata ; rdfs:range xsd:string ; rdfs:label "full-text route" ;
+  IAO:0000115 "pmc (PMCID and free to read), publisher (free to read, no PMCID) or none." .
+:possibleDuplicateOf a owl:ObjectProperty ; rdfs:domain :DocumentMetadata ; rdfs:range :DocumentMetadata ; rdfs:label "possible duplicate of" ;
+  IAO:0000115 "Links a paper to the paper with the smallest UID among those sharing its folded title (preprint and article, patent family). A hint, not an identity claim." .
+:hasAuthorship a owl:ObjectProperty ; rdfs:domain :DocumentMetadata ; rdfs:range :Authorship ; rdfs:label "has authorship" ;
+  IAO:0000115 "The paper's authorships, one per author in author-list order." .
+:person a owl:ObjectProperty ; rdfs:domain :Authorship ; rdfs:range :Person ; rdfs:label "person" ;
+  IAO:0000115 "The author, shared across papers when an ORCID or OpenAlex ID identifies them." .
+:position a owl:DatatypeProperty ; rdfs:domain :Authorship ; rdfs:range xsd:integer ; rdfs:label "position" ;
+  IAO:0000115 "1-based place in the paper's author list." .
+:affiliationString a owl:DatatypeProperty ; rdfs:domain :Authorship ; rdfs:range xsd:string ; rdfs:label "affiliation string" ;
+  IAO:0000115 "An affiliation as the source gives it (Europe PMC, Crossref, OpenAlex). Text only: never minted into an Organization." .
+:primaryTopic a owl:ObjectProperty ; rdfs:domain :DocumentMetadata ; rdfs:range :Topic ; rdfs:label "primary topic" ;
+  IAO:0000115 "The paper's highest-scoring OpenAlex topic." .
+:hasKeyword a owl:ObjectProperty ; rdfs:domain :DocumentMetadata ; rdfs:range :Keyword ; rdfs:label "has keyword" ;
+  IAO:0000115 "An author keyword of the paper." .
+:publicationStatus a owl:DatatypeProperty ; rdfs:domain :DocumentMetadata ; rdfs:range xsd:string ; rdfs:label "publication status" ;
+  IAO:0000115 "Europe PMC publication status: epublish, ppublish, aheadofprint, ..." .
+:publicationModel a owl:DatatypeProperty ; rdfs:domain :DocumentMetadata ; rdfs:range xsd:string ; rdfs:label "publication model" ;
+  IAO:0000115 "Europe PMC publication model: Electronic, Print, Print-Electronic." .
+:firstIndexedDate a owl:DatatypeProperty ; rdfs:domain :DocumentMetadata ; rdfs:range xsd:date ; rdfs:label "first indexed" ;
+  IAO:0000115 "When Europe PMC first indexed the record." .
+:fullTextReceivedDate a owl:DatatypeProperty ; rdfs:domain :DocumentMetadata ; rdfs:range xsd:date ; rdfs:label "full text received" ;
+  IAO:0000115 "When Europe PMC received the full text." .
+:indexingCompletedDate a owl:DatatypeProperty ; rdfs:domain :DocumentMetadata ; rdfs:range xsd:date ; rdfs:label "indexing completed" ;
+  IAO:0000115 "When indexing of the record was completed." .
+:electronicPublicationDate a owl:DatatypeProperty ; rdfs:domain :DocumentMetadata ; rdfs:range xsd:date ; rdfs:label "electronic publication date" ;
+  IAO:0000115 "Date of electronic publication." .
+:firstPublicationDate a owl:DatatypeProperty ; rdfs:domain :DocumentMetadata ; rdfs:range xsd:date ; rdfs:label "first publication date" ;
+  IAO:0000115 "Date of first publication in any form." .
+:embargoUntil a owl:DatatypeProperty ; rdfs:domain :DocumentMetadata ; rdfs:range xsd:date ; rdfs:label "embargo until" ;
+  IAO:0000115 "End of an embargo on the full text." .
+:licenseStartDate a owl:DatatypeProperty ; rdfs:domain :DocumentMetadata ; rdfs:range xsd:date ; rdfs:label "licence start date" ;
+  IAO:0000115 "When the licence Crossref lists took effect." .
+:hasSupplementaryMaterial a owl:DatatypeProperty ; rdfs:domain :DocumentMetadata ; rdfs:range xsd:boolean ; rdfs:label "has supplementary material" ;
+  IAO:0000115 "Europe PMC flags supplementary files." .
+:hasDataLinks a owl:DatatypeProperty ; rdfs:domain :DocumentMetadata ; rdfs:range xsd:boolean ; rdfs:label "has data links" ;
+  IAO:0000115 "Europe PMC links the paper to supporting or related data." .
+:hasLabsLinks a owl:DatatypeProperty ; rdfs:domain :DocumentMetadata ; rdfs:range xsd:boolean ; rdfs:label "has labs links" ;
+  IAO:0000115 "Europe PMC Labs links exist for the paper." .
+:hasTextMinedTerms a owl:DatatypeProperty ; rdfs:domain :DocumentMetadata ; rdfs:range xsd:boolean ; rdfs:label "has text-mined terms" ;
+  IAO:0000115 "Europe PMC has text-mined terms for the paper." .
+:hasDbCrossReferences a owl:DatatypeProperty ; rdfs:domain :DocumentMetadata ; rdfs:range xsd:boolean ; rdfs:label "has database cross-references" ;
+  IAO:0000115 "The paper cross-references molecular databases." .
+:hasReferenceList a owl:DatatypeProperty ; rdfs:domain :DocumentMetadata ; rdfs:range xsd:boolean ; rdfs:label "has reference list" ;
+  IAO:0000115 "Europe PMC holds the paper's reference list." .
+:hasBook a owl:DatatypeProperty ; rdfs:domain :DocumentMetadata ; rdfs:range xsd:boolean ; rdfs:label "has book" ;
+  IAO:0000115 "The record is linked to a book." .
+:hasEvaluations a owl:DatatypeProperty ; rdfs:domain :DocumentMetadata ; rdfs:range xsd:boolean ; rdfs:label "has evaluations" ;
+  IAO:0000115 "The paper has post-publication evaluations." .
+:inEuropePmc a owl:DatatypeProperty ; rdfs:domain :DocumentMetadata ; rdfs:range xsd:boolean ; rdfs:label "in Europe PMC" ;
+  IAO:0000115 "The record is in Europe PMC proper." .
+:inPmc a owl:DatatypeProperty ; rdfs:domain :DocumentMetadata ; rdfs:range xsd:boolean ; rdfs:label "in PMC" ;
+  IAO:0000115 "The paper is in PubMed Central." .
+:isAuthorManuscript a owl:DatatypeProperty ; rdfs:domain :DocumentMetadata ; rdfs:range xsd:boolean ; rdfs:label "is author manuscript" ;
+  IAO:0000115 "An author manuscript (NIH public access or Europe PMC funders)." .
+:inMedline a owl:DatatypeProperty ; rdfs:domain :DocumentMetadata ; rdfs:range xsd:boolean ; rdfs:label "in MEDLINE" ;
+  IAO:0000115 "The record carries a MEDLINE subset (Index Medicus)." .
+:dataLinkTag a owl:DatatypeProperty ; rdfs:domain :DocumentMetadata ; rdfs:range xsd:string ; rdfs:label "data link tag" ;
+  IAO:0000115 "A Europe PMC data-link tag: supporting_data, altmetrics, related_data, ..." .
+:accessionType a owl:DatatypeProperty ; rdfs:domain :DocumentMetadata ; rdfs:range xsd:string ; rdfs:label "accession type" ;
+  IAO:0000115 "A kind of accession number text mining found in the paper: nct, gen, refsnp, pdb, geo, uniprot, ..." .
+:medlineSubset a owl:DatatypeProperty ; rdfs:domain :DocumentMetadata ; rdfs:range xsd:string ; rdfs:label "MEDLINE subset" ;
+  IAO:0000115 "A MEDLINE subset the record belongs to." .
+:investigator a owl:DatatypeProperty ; rdfs:domain :DocumentMetadata ; rdfs:range xsd:string ; rdfs:label "investigator" ;
+  IAO:0000115 "A collaborator or investigator group member listed on the record." .
+:integrityStatus a owl:DatatypeProperty ; rdfs:domain :DocumentMetadata ; rdfs:range xsd:string ; rdfs:label "integrity status" ;
+  IAO:0000115 "retracted, retraction_notice, corrected, erratum_notice, expression_of_concern or expression_of_concern_notice, from the record's comment/correction links." .
+:openAlexReferenceCount a owl:DatatypeProperty ; rdfs:domain :DocumentMetadata ; rdfs:range xsd:integer ; rdfs:label "OpenAlex reference count" ;
+  IAO:0000115 "References OpenAlex lists for the work (not only those inside the corpus)." .
+:hasRecordRelation a owl:ObjectProperty ; rdfs:domain :DocumentMetadata ; rdfs:range :RecordRelation ; rdfs:label "has record relation" ;
+  IAO:0000115 "A Europe PMC link from this record to another." .
+:relationKind a owl:DatatypeProperty ; rdfs:domain :RecordRelation ; rdfs:range xsd:string ; rdfs:label "relation kind" ;
+  IAO:0000115 "has_preprint, preprint_of, has_erratum, erratum_for, retracted_by, retraction_of, has_comment, comment_on, update_of, version, ..." .
+:relationLabel a owl:DatatypeProperty ; rdfs:domain :RecordRelation ; rdfs:range xsd:string ; rdfs:label "relation label" ;
+  IAO:0000115 "The label Europe PMC gives the link ('Preprint in', 'Erratum for', ...)." .
+:relatedRecordSource a owl:DatatypeProperty ; rdfs:domain :RecordRelation ; rdfs:range xsd:string ; rdfs:label "related record source" ;
+  IAO:0000115 "Source database of the linked record (MED, PPR, ...)." .
+:relatedRecordId a owl:DatatypeProperty ; rdfs:domain :RecordRelation ; rdfs:range xsd:string ; rdfs:label "related record ID" ;
+  IAO:0000115 "Europe PMC identifier of the linked record." .
+:relationReference a owl:DatatypeProperty ; rdfs:domain :RecordRelation ; rdfs:range xsd:string ; rdfs:label "relation reference" ;
+  IAO:0000115 "The citation text Europe PMC gives for the linked record." .
+:relationNote a owl:DatatypeProperty ; rdfs:domain :RecordRelation ; rdfs:range xsd:string ; rdfs:label "relation note" ;
+  IAO:0000115 "How Europe PMC made the link (for example a title and first-author match)." .
+:relatedPaper a owl:ObjectProperty ; rdfs:domain :RecordRelation ; rdfs:range :DocumentMetadata ; rdfs:label "related paper" ;
+  IAO:0000115 "The linked record, when it is a paper of the corpus." .
+:hasPreprint a owl:ObjectProperty ; rdfs:domain :DocumentMetadata ; rdfs:range :DocumentMetadata ; rdfs:label "has preprint" ;
+  IAO:0000115 "This paper's preprint, when both are in the corpus." .
+:preprintOf a owl:ObjectProperty ; rdfs:domain :DocumentMetadata ; rdfs:range :DocumentMetadata ; rdfs:label "preprint of" ;
+  IAO:0000115 "The published paper this preprint became, when both are in the corpus." .
+:workKey a owl:DatatypeProperty ; rdfs:domain :DocumentMetadata ; rdfs:range xsd:string ; rdfs:label "work key" ;
+  IAO:0000115 "The same for a paper and its preprints and versions (one study); count distinct keys to count studies." .
+:fullTextMentions a owl:DatatypeProperty ; rdfs:domain :DocumentMetadata ; rdfs:range xsd:integer ; rdfs:label "full-text mentions" ;
+  IAO:0000115 "How often ME/CFS or Long COVID is named in the parsed body text; with relevance, tells a paper about the disease from one that mentions it in passing. Absent when no full text was parsed." .
+:workKind a owl:DatatypeProperty ; rdfs:domain :DocumentMetadata ; rdfs:range xsd:string ; rdfs:label "work kind" ;
+  IAO:0000115 "article, preprint, repository (a Zenodo/OSF/figshare copy) or notice (correction, erratum, retraction), from what the sources report." .
+:hasVersion a owl:ObjectProperty ; rdfs:domain :DocumentMetadata ; rdfs:range :DocumentMetadata ; rdfs:label "has version" ;
+  IAO:0000115 "Another version of this paper in the corpus: a repository copy, a versioned DOI (eLife .3, Cochrane pub9). Symmetric." .
+:possiblySameAs a owl:ObjectProperty ; rdfs:domain :DocumentMetadata ; rdfs:range :DocumentMetadata ; rdfs:label "possibly same as" ;
+  IAO:0000115 "A record that may be this paper but was not merged because a guard failed (year, first author, DOI); the IdentityLink says why. Symmetric." .
+:amends a owl:ObjectProperty ; rdfs:domain :DocumentMetadata ; rdfs:range :DocumentMetadata ; rdfs:label "amends" ;
+  IAO:0000115 "The paper of the corpus this correction, erratum or retraction notice concerns." .
+:amendedBy a owl:ObjectProperty ; rdfs:domain :DocumentMetadata ; rdfs:range :DocumentMetadata ; rdfs:label "amended by" ;
+  IAO:0000115 "A correction, erratum or retraction notice of the corpus that concerns this paper." .
+:hasIdentityLink a owl:ObjectProperty ; rdfs:domain :DocumentMetadata ; rdfs:range :IdentityLink ; rdfs:label "has identity link" ;
+  IAO:0000115 "The reason this paper is linked to another record of the corpus." .
+:identityRelation a owl:DatatypeProperty ; rdfs:domain :IdentityLink ; rdfs:range xsd:string ; rdfs:label "identity relation" ;
+  IAO:0000115 "has_preprint, preprint_of, has_version, possibly_same_as, amends or amended_by." .
+:identityReason a owl:DatatypeProperty ; rdfs:domain :IdentityLink ; rdfs:range xsd:string ; rdfs:label "identity reason" ;
+  IAO:0000115 "Why the records were linked (same title, year and first author; DOIs differ only by a version suffix) or not merged (year differs, first author differs)." .
+:linkedPaper a owl:ObjectProperty ; rdfs:domain :IdentityLink ; rdfs:range :DocumentMetadata ; rdfs:label "linked paper" ;
+  IAO:0000115 "The other record of the corpus." .
+:hasSubstance a owl:ObjectProperty ; rdfs:domain :DocumentMetadata ; rdfs:range :Substance ; rdfs:label "has substance" ;
+  IAO:0000115 "A chemical substance the paper is indexed with." .
+:registryNumber a owl:DatatypeProperty ; rdfs:domain :Substance ; rdfs:range xsd:string ; rdfs:label "registry number" ;
+  IAO:0000115 "CAS or EC registry number of the substance." .
+:hasSourceHit a owl:ObjectProperty ; rdfs:domain :DocumentMetadata ; rdfs:range :SourceHit ; rdfs:label "has source hit" ;
+  IAO:0000115 "One search source's record of this paper (which source, under which id)." .
+:foundBy a owl:ObjectProperty ; rdfs:domain :DocumentMetadata ; rdfs:range :DiscoverySource ; rdfs:label "found by" ;
+  IAO:0000115 "A search source that listed this paper (Europe PMC, PubMed, OpenAlex, Semantic Scholar)." .
+:fromSource a owl:ObjectProperty ; rdfs:domain :SourceHit ; rdfs:range :DiscoverySource ; rdfs:label "from source" ;
+  IAO:0000115 "The discovery source that returned this record." .
+:sourceRecordId a owl:DatatypeProperty ; rdfs:domain :SourceHit ; rdfs:range xsd:string ; rdfs:label "source record id" ;
+  IAO:0000115 "The id the source uses for the paper (PMID, OpenAlex W id, Semantic Scholar paper id, Europe PMC id)." .
+:sourceRecordType a owl:DatatypeProperty ; rdfs:domain :SourceHit ; rdfs:range xsd:string ; rdfs:label "source record type" ;
+  IAO:0000115 "The kind of record the source returned (Europe PMC: MED, PMC, PPR...; others: PUBMED, OPENALEX, SEMANTICSCHOLAR)." .
+:hasFullTextLink a owl:ObjectProperty ; rdfs:domain :DocumentMetadata ; rdfs:range :FullTextLink ; rdfs:label "has full-text link" ;
+  IAO:0000115 "A place Europe PMC lists where the full text can be read." .
+:linkStyle a owl:DatatypeProperty ; rdfs:domain :FullTextLink ; rdfs:range xsd:string ; rdfs:label "link style" ;
+  IAO:0000115 "Document style of the link: pdf, html, doi, abs." .
+:linkAvailability a owl:DatatypeProperty ; rdfs:domain :FullTextLink ; rdfs:range xsd:string ; rdfs:label "link availability" ;
+  IAO:0000115 "Access of the link: Open access, Free, Subscription required." .
+:linkSite a owl:DatatypeProperty ; rdfs:domain :FullTextLink ; rdfs:range xsd:string ; rdfs:label "link site" ;
+  IAO:0000115 "The site the link points to: Europe_PMC, DOI, Unpaywall, PubMedCentral, ..." .
+:hasOpenAccessLocation a owl:ObjectProperty ; rdfs:domain :DocumentMetadata ; rdfs:range :OpenAccessLocation ; rdfs:label "has open-access location" ;
+  IAO:0000115 "A copy of the paper Unpaywall found." .
+:pdfUrl a owl:DatatypeProperty ; rdfs:domain :OpenAccessLocation ; rdfs:range xsd:anyURI ; rdfs:label "PDF URL" ;
+  IAO:0000115 "Direct link to the copy's PDF." .
+:articleVersion a owl:DatatypeProperty ; rdfs:domain :OpenAccessLocation ; rdfs:range xsd:string ; rdfs:label "article version" ;
+  IAO:0000115 "submittedVersion, acceptedVersion or publishedVersion." .
+:hostType a owl:DatatypeProperty ; rdfs:domain :OpenAccessLocation ; rdfs:range xsd:string ; rdfs:label "host type" ;
+  IAO:0000115 "publisher or repository." .
+:hasBestOpenAccessLocation a owl:ObjectProperty ; rdfs:domain :DocumentMetadata ; rdfs:range :OpenAccessLocation ; rdfs:subPropertyOf :hasOpenAccessLocation ; rdfs:label "has best open-access location" ;
+  IAO:0000115 "Unpaywall's preferred copy of this paper. An edge, not a flag on the location: a copy can be the best for one paper and not for another." .
+:essn a owl:DatatypeProperty ; rdfs:domain :Journal ; rdfs:range xsd:string ; rdfs:label "electronic ISSN" ;
+  IAO:0000115 "The journal's electronic ISSN." .
+:nlmId a owl:DatatypeProperty ; rdfs:domain :Journal ; rdfs:range xsd:string ; rdfs:label "NLM ID" ;
+  IAO:0000115 "The journal's NLM catalog identifier." .
+:medlineAbbreviation a owl:DatatypeProperty ; rdfs:domain :Journal ; rdfs:range xsd:string ; rdfs:label "MEDLINE abbreviation" ;
+  IAO:0000115 "The journal's MEDLINE title abbreviation." .
+:isoAbbreviation a owl:DatatypeProperty ; rdfs:domain :Journal ; rdfs:range xsd:string ; rdfs:label "ISO abbreviation" ;
+  IAO:0000115 "The journal's ISO title abbreviation." .
+:isInDoaj a owl:DatatypeProperty ; rdfs:domain :Journal ; rdfs:range xsd:boolean ; rdfs:label "is in DOAJ" ;
+  IAO:0000115 "The journal is listed in the Directory of Open Access Journals." .
+:isOpenAccessJournal a owl:DatatypeProperty ; rdfs:domain :Journal ; rdfs:range xsd:boolean ; rdfs:label "is open-access journal" ;
+  IAO:0000115 "Unpaywall's journal-level open-access flag." .
+:citationsPerYear a owl:DatatypeProperty ; rdfs:domain :ICiteMetadata ; rdfs:range xsd:double ; rdfs:label "citations per year" ;
+  IAO:0000115 "Mean citations per year (NIH iCite)." .
+:cites a owl:ObjectProperty ; rdfs:domain :DocumentMetadata ; rdfs:range :DocumentMetadata ; rdfs:label "cites" ;
+  IAO:0000115 "This paper cites that paper of the corpus (from its reference list, OpenAlex's, or both)." .
+:citesViaReferenceList a owl:ObjectProperty ; rdfs:domain :DocumentMetadata ; rdfs:range :DocumentMetadata ; rdfs:subPropertyOf :cites ; rdfs:label "cites (reference list)" ;
+  IAO:0000115 "Cites, as found in the paper's own parsed reference list." .
+:citesViaOpenAlex a owl:ObjectProperty ; rdfs:domain :DocumentMetadata ; rdfs:range :DocumentMetadata ; rdfs:subPropertyOf :cites ; rdfs:label "cites (OpenAlex)" ;
+  IAO:0000115 "Cites, as OpenAlex lists the paper's references." .
+:relatedWork a owl:ObjectProperty ; rdfs:domain :DocumentMetadata ; rdfs:range :DocumentMetadata ; rdfs:label "related work" ;
+  IAO:0000115 "OpenAlex lists that paper as related, when both are in the corpus." .
+:citesExternal a owl:ObjectProperty ; rdfs:domain :DocumentMetadata ; rdfs:range :ExternalWork ; rdfs:label "cites external work" ;
+  IAO:0000115 "A reference to a work outside the corpus." .
+:hasCitationContext a owl:ObjectProperty ; rdfs:domain :DocumentMetadata ; rdfs:range :CitationContext ; rdfs:label "has citation context" ;
+  IAO:0000115 "A sentence in this paper that cites a corpus paper." .
+:contextText a owl:DatatypeProperty ; rdfs:domain :CitationContext ; rdfs:range xsd:string ; rdfs:label "context text" ;
+  IAO:0000115 "The sentence around the citation." .
+:contextSectionPath a owl:DatatypeProperty ; rdfs:domain :CitationContext ; rdfs:range xsd:string ; rdfs:label "context section path" ;
+  IAO:0000115 "Section path of the paragraph the citation sits in." .
+:contextSectionKind a owl:DatatypeProperty ; rdfs:domain :CitationContext ; rdfs:range xsd:string ; rdfs:label "context section kind" ;
+  IAO:0000115 "Kind of that section's top-level heading." .
+:citingPaper a owl:ObjectProperty ; rdfs:domain :CitationContext ; rdfs:range :DocumentMetadata ; rdfs:label "citing paper" ;
+  IAO:0000115 "The paper whose text this is." .
+:citedPaper a owl:ObjectProperty ; rdfs:domain :CitationContext ; rdfs:range :DocumentMetadata ; rdfs:label "cited paper" ;
+  IAO:0000115 "The corpus paper the sentence cites." .
+:fullTextParser a owl:DatatypeProperty ; rdfs:domain :DocumentMetadata ; rdfs:range xsd:string ; rdfs:label "full-text parser" ;
+  IAO:0000115 "The parser and section source that produced the full-text layer, e.g. pyeuropepmc-jats/blocks." .
+:bodyWordCount a owl:DatatypeProperty ; rdfs:domain :DocumentMetadata ; rdfs:range xsd:integer ; rdfs:label "body word count" ;
+  IAO:0000115 "Words in the parsed body sections." .
+:sectionCount a owl:DatatypeProperty ; rdfs:domain :DocumentMetadata ; rdfs:range xsd:integer ; rdfs:label "section count" ;
+  IAO:0000115 "Parsed body sections." .
+:tableCount a owl:DatatypeProperty ; rdfs:domain :DocumentMetadata ; rdfs:range xsd:integer ; rdfs:label "table count" ;
+  IAO:0000115 "Tables in the parsed full text." .
+:figureCount a owl:DatatypeProperty ; rdfs:domain :DocumentMetadata ; rdfs:range xsd:integer ; rdfs:label "figure count" ;
+  IAO:0000115 "Figures in the parsed full text." .
+:parsedReferenceCount a owl:DatatypeProperty ; rdfs:domain :DocumentMetadata ; rdfs:range xsd:integer ; rdfs:label "parsed reference count" ;
+  IAO:0000115 "References found in the paper's own reference list. Distinct from referencesCount, which comes from a bibliographic source." .
+:hasDocumentSection a owl:ObjectProperty ; rdfs:domain :DocumentMetadata ; rdfs:range :DocumentSection ; rdfs:label "has document section" ;
+  IAO:0000115 "A parsed section of the paper's full text." .
+:hasDocumentTable a owl:ObjectProperty ; rdfs:domain :DocumentMetadata ; rdfs:range :DocumentTable ; rdfs:label "has document table" ;
+  IAO:0000115 "A parsed table of the paper's full text." .
+:sectionPosition a owl:DatatypeProperty ; rdfs:domain :DocumentSection ; rdfs:range xsd:integer ; rdfs:label "section position" ;
+  IAO:0000115 "1-based position in the parsed paper." .
+:sectionTitle a owl:DatatypeProperty ; rdfs:domain :DocumentSection ; rdfs:range xsd:string ; rdfs:label "section title" ;
+  IAO:0000115 "The section's own heading." .
+:sectionPath a owl:DatatypeProperty ; rdfs:domain :DocumentSection ; rdfs:range xsd:string ; rdfs:label "section path" ;
+  IAO:0000115 "Heading path from the top-level section, joined with /, so subsections that share a heading stay distinct." .
+:sectionKind a owl:DatatypeProperty ; rdfs:domain :DocumentSection ; rdfs:range xsd:string ; rdfs:label "section kind" ;
+  IAO:0000115 "introduction, methods, results, discussion (also conclusions and limitations), references, back_matter (contributions, funding, ethics, data availability, footnotes), untitled or other, from the top-level heading." .
+:wordCount a owl:DatatypeProperty ; rdfs:domain :DocumentSection ; rdfs:range xsd:integer ; rdfs:label "word count" ;
+  IAO:0000115 "Words in the section." .
+:paragraphCount a owl:DatatypeProperty ; rdfs:domain :DocumentSection ; rdfs:range xsd:integer ; rdfs:label "paragraph count" ;
+  IAO:0000115 "Paragraphs in the section." .
+:tablePosition a owl:DatatypeProperty ; rdfs:domain :DocumentTable ; rdfs:range xsd:integer ; rdfs:label "table position" ;
+  IAO:0000115 "1-based position among the paper's tables." .
+:caption a owl:DatatypeProperty ; rdfs:domain :DocumentTable ; rdfs:range xsd:string ; rdfs:label "caption" ;
+  IAO:0000115 "The table's caption (first 500 characters)." .
+:rowCount a owl:DatatypeProperty ; rdfs:domain :DocumentTable ; rdfs:range xsd:integer ; rdfs:label "row count" ;
+  IAO:0000115 "Rows in the table." .
+:columnCount a owl:DatatypeProperty ; rdfs:domain :DocumentTable ; rdfs:range xsd:integer ; rdfs:label "column count" ;
+  IAO:0000115 "Columns in the table." .
+:columnHeaders a owl:DatatypeProperty ; rdfs:domain :DocumentTable ; rdfs:range xsd:string ; rdfs:label "column headers" ;
+  IAO:0000115 "The header cells joined with ' | '." .
+:fundingStatement a owl:DatatypeProperty ; rdfs:domain :DocumentMetadata ; rdfs:range xsd:string ; rdfs:label "funding statement" ;
+  IAO:0000115 "The paper's funding statement (first 2,000 characters)." .
+:acknowledgementStatement a owl:DatatypeProperty ; rdfs:domain :DocumentMetadata ; rdfs:range xsd:string ; rdfs:label "acknowledgement statement" ;
+  IAO:0000115 "The paper's acknowledgements (first 2,000 characters)." .
+:dataAvailabilityStatement a owl:DatatypeProperty ; rdfs:domain :DocumentMetadata ; rdfs:range xsd:string ; rdfs:label "data availability statement" ;
+  IAO:0000115 "The paper's data-availability statement (first 2,000 characters)." .
+:ethicsStatement a owl:DatatypeProperty ; rdfs:domain :DocumentMetadata ; rdfs:range xsd:string ; rdfs:label "ethics statement" ;
+  IAO:0000115 "The paper's ethics or consent statement (first 2,000 characters)." .
+:competingInterestsStatement a owl:DatatypeProperty ; rdfs:domain :DocumentMetadata ; rdfs:range xsd:string ; rdfs:label "competing-interests statement" ;
+  IAO:0000115 "The paper's competing-interests statement (first 2,000 characters)." .
+:mentionsResource a owl:ObjectProperty ; rdfs:domain :DocumentMetadata ; rdfs:range :ResourceReference ; rdfs:label "mentions resource" ;
+  IAO:0000115 "A registration, repository, accession, cohort or code the text names." .
+:resourceKind a owl:DatatypeProperty ; rdfs:domain :ResourceReference ; rdfs:range xsd:string ; rdfs:label "resource kind" ;
+  IAO:0000115 "trial_registration, review_registration, preregistration, code_repository, data_repository, data_accession, cohort_or_dataset or classification_code." .
+:resourceScheme a owl:DatatypeProperty ; rdfs:domain :ResourceReference ; rdfs:range xsd:string ; rdfs:label "resource scheme" ;
+  IAO:0000115 "nct, isrctn, prospero, osf, github, zenodo, geo, icd10, cohort, ..." .
+:resourceId a owl:DatatypeProperty ; rdfs:domain :ResourceReference ; rdfs:range xsd:string ; rdfs:label "resource ID" ;
+  IAO:0000115 "The identifier within its scheme." .
+:annotationStatus a owl:DatatypeProperty ; rdfs:domain :DocumentMetadata ; rdfs:range xsd:string ; rdfs:label "annotation status" ;
+  IAO:0000115 "How complete the text-mined terms are: complete (every provider answered), partial (a provider had a temporary error, so the paper is worth asking again) or unavailable (no provider has annotations for it). Absent when the annotations stage did not run." .
+:annotationSource a owl:DatatypeProperty ; rdfs:domain :DocumentMetadata ; rdfs:range xsd:string ; rdfs:label "annotation source" ;
+  IAO:0000115 "A provider that returned annotations for the paper: europepmc or pubtator." .
+:mentionsTerm a owl:ObjectProperty ; rdfs:domain :DocumentMetadata ; rdfs:range :TextMinedTerm ; rdfs:label "mentions term" ;
+  IAO:0000115 "A text-mined concept the paper mentions." .
+:termType a owl:DatatypeProperty ; rdfs:domain :TextMinedTerm ; rdfs:range xsd:string ; rdfs:label "term type" ;
+  IAO:0000115 "DISEASE, GENE, CHEMICAL, ORGANISM, SYMPTOM, GO_TERM, ANATOMY, METHOD, ..." .
+:conceptId a owl:DatatypeProperty ; rdfs:domain :TextMinedTerm ; rdfs:range xsd:string ; rdfs:label "concept ID" ;
+  IAO:0000115 "The ontology CURIEs of the concept (MeSH, UMLS, NCBI Gene, ...); the services name one concept with different ones, so a merged term lists each, the preferred first." .
+:hasTermOccurrence a owl:ObjectProperty ; rdfs:domain :DocumentMetadata ; rdfs:range :TermOccurrence ; rdfs:label "has term occurrence" ;
+  IAO:0000115 "How this paper mentions a text-mined term, for terms mentioned often." .
+:ofTerm a owl:ObjectProperty ; rdfs:domain :TermOccurrence ; rdfs:range :TextMinedTerm ; rdfs:label "of term" ;
+  IAO:0000115 "The term." .
+:occurrenceCount a owl:DatatypeProperty ; rdfs:domain :TermOccurrence ; rdfs:range xsd:integer ; rdfs:label "occurrence count" ;
+  IAO:0000115 "Mentions of the term in the paper." .
+:inSection a owl:DatatypeProperty ; rdfs:domain :TermOccurrence ; rdfs:range xsd:string ; rdfs:label "in section" ;
+  IAO:0000115 "A section the term is mentioned in." .
+:annotationProvider a owl:DatatypeProperty ; rdfs:domain :TermOccurrence ; rdfs:range xsd:string ; rdfs:label "annotation provider" ;
+  IAO:0000115 "europepmc and/or pubtator: every service that mentioned the term in the paper." .
+# END GENERATED: document graph vocabulary

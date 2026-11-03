@@ -1,0 +1,3 @@
+body{max-width:62rem;margin:2rem auto;padding:0 1rem;font:16px/1.5 system-ui,sans-serif;color:#14232b}
+table{border-collapse:collapse;width:100%;font-size:.9rem}td,th{border:1px solid #ccd;padding:.3rem .5rem;vertical-align:top}code{background:#f0eee8;padding:0 .2rem}
+@media(prefers-color-scheme:dark){body{background:#14232b;color:#f6f3ec}td,th{border-color:#456}code{background:#1d3540}}

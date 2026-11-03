@@ -1,0 +1,14 @@
+@prefix : <https://w3id.org/mecfs/kg/> .
+@prefix owl: <http://www.w3.org/2002/07/owl#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix dc: <http://purl.org/dc/elements/1.1/> .
+
+<https://w3id.org/mecfs/ontology/relations> a owl:Ontology ;
+  owl:versionIRI <https://w3id.org/mecfs/ontology/relations/2025-09-22> ;
+  dc:title "AID-PAIS Relations Module (placeholder)" ;
+  dc:description "Placeholder relations module to satisfy catalog-based builds. Add detailed relation definitions here as needed." .
+
+# Placeholder relations (define formally in core or other modules as appropriate)
+:relatedTo a owl:ObjectProperty ;
+  rdfs:label "related to" ;
+  rdfs:comment "Generic related-to relation (placeholder). Replace or refine as needed." .

@@ -1,0 +1,1332 @@
+# SHACL shapes for the document-level metadata knowledge graph.
+#
+# Targets the RDF produced by
+# ``mecfs_kg.pipelines.assembly.rdf_document_metadata.DocumentMetadataRDFBuilder``.
+# Validate a run's KG with:  mecfs kg validate runs/<id>
+#
+# ---------------------------------------------------------------------------
+# schema.org is split across TWO namespaces -- deliberate, do not "fix" it
+# ---------------------------------------------------------------------------
+# rdflib's ``SDO`` namespace object resolves to **https**://schema.org/, so
+# every schema.org term written through ``SDO.x`` in
+# rdf_document_metadata.py -- isAccessibleForFree, accessMode, publisher, url,
+# identifier, datePublished, publication, volumeNumber, address,
+# addressCountry, foundingDate, author, sameAs, license, ... -- lands in the
+# HTTPS namespace.
+#
+# Two places hardcode the **http** form instead:
+# ``http://schema.org/aggregateRating`` and ``http://schema.org/ratingValue``
+# in orchestration/stages/assembly.py. Both namespaces genuinely coexist in a
+# single serialized graph, so the project uses two prefixes:
+#
+#     schema:     = https://schema.org/   (everything in this file)
+#     schemahttp: = http://schema.org/    (the observation confidence node,
+#                                          constrained in observation.shacl.ttl)
+#
+# An earlier version of this file declared ``schema:`` as HTTP only and then
+# used schema:isAccessibleForFree and schema:sameAs -- which matched nothing at
+# all in real output, silently validating zero triples. That is the bug this
+# header exists to prevent recurring.
+#
+# Shapes for the observation layer live in observation.shacl.ttl, evidence in
+# evidence.shacl.ttl, cross-cutting PROV rules in provenance.shacl.ttl.
+
+@prefix sh:       <http://www.w3.org/ns/shacl#> .
+@prefix xsd:      <http://www.w3.org/2001/XMLSchema#> .
+@prefix rdfs:     <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix dc:       <http://purl.org/dc/elements/1.1/> .
+@prefix schema:   <https://schema.org/> .
+@prefix prov:     <http://www.w3.org/ns/prov#> .
+@prefix aid-pais: <https://w3id.org/mecfs/kg/> .
+@prefix dcterms:  <http://purl.org/dc/terms/> .
+@prefix mecfssh:  <https://w3id.org/mecfs/kg/shapes/> .
+
+
+#############################################################################
+# aid-pais:DocumentMetadata -- the paper node
+#############################################################################
+
+mecfssh:DocumentMetadataShape a sh:NodeShape ;
+    rdfs:label "Document metadata shape" ;
+    rdfs:comment "Structural contract for the paper node: cardinality, node kind and datatype of every predicate DocumentMetadataRDFBuilder emits. Everything here holds in current real run output; a breach means the builder wrote something it has never written before. Completeness goals that real data does *not* meet live in mecfssh:DocumentMetadataCompletenessShape below, at Warning severity." ;
+    sh:targetClass aid-pais:DocumentMetadata ;
+
+    # --- title ------------------------------------------------------------
+    # Both are written unconditionally from metadata.title, so presence is a
+    # Violation. Non-emptiness is a separate, softer check (see below).
+    sh:property [
+        sh:path dc:title ;
+        sh:minCount 1 ;
+        sh:maxCount 1 ;
+        sh:datatype xsd:string ;
+        sh:severity sh:Violation ;
+        sh:message "DocumentMetadata must have exactly one dc:title string literal." ;
+    ] ;
+    sh:property [
+        sh:path rdfs:label ;
+        sh:minCount 1 ;
+        sh:maxCount 1 ;
+        sh:datatype xsd:string ;
+        sh:severity sh:Violation ;
+        sh:message "DocumentMetadata must have exactly one rdfs:label string literal." ;
+    ] ;
+    sh:property [
+        sh:path schema:alternativeHeadline ;
+        sh:maxCount 1 ;
+        sh:datatype xsd:string ;
+        sh:severity sh:Violation ;
+        sh:message "schema:alternativeHeadline (the short title) must be a single string literal." ;
+    ] ;
+
+    # --- authorship -------------------------------------------------------
+    sh:property [
+        sh:path schema:author ;
+        sh:nodeKind sh:IRI ;
+        sh:severity sh:Violation ;
+        sh:message "schema:author must point at a Person IRI. The Europe PMC byline string lives under aid-pais:authorString instead -- schema.org has no authorString term." ;
+    ] ;
+    sh:property [
+        sh:path aid-pais:authorString ;
+        sh:maxCount 1 ;
+        sh:datatype xsd:string ;
+        sh:severity sh:Violation ;
+        sh:message "aid-pais:authorString must be a single string literal (the raw byline)." ;
+    ] ;
+
+    # --- bibliographic ----------------------------------------------------
+    sh:property [
+        sh:path schema:datePublished ;
+        sh:maxCount 1 ;
+        sh:or ( [ sh:datatype xsd:date ] [ sh:datatype xsd:gYear ] ) ;
+        sh:severity sh:Violation ;
+        sh:message "schema:datePublished must be a single xsd:date (the record's full publication date) or, when the record has only a year, an xsd:gYear literal." ;
+    ] ;
+    sh:property [
+        sh:path schema:publication ;
+        sh:maxCount 1 ;
+        sh:nodeKind sh:IRI ;
+        sh:severity sh:Violation ;
+        sh:message "schema:publication must point at a single aid-pais:Journal IRI." ;
+    ] ;
+    sh:property [
+        sh:path schema:volumeNumber ;
+        sh:maxCount 1 ;
+        sh:datatype xsd:string ;
+        sh:severity sh:Violation ;
+        sh:message "schema:volumeNumber must be a single string literal." ;
+    ] ;
+    sh:property [
+        sh:path schema:issueNumber ;
+        sh:maxCount 1 ;
+        sh:datatype xsd:string ;
+        sh:severity sh:Violation ;
+        sh:message "schema:issueNumber must be a single string literal." ;
+    ] ;
+    sh:property [
+        sh:path schema:pageRange ;
+        sh:maxCount 1 ;
+        sh:datatype xsd:string ;
+        sh:severity sh:Violation ;
+        sh:message "schema:pageRange must be a single string literal." ;
+    ] ;
+    sh:property [
+        sh:path schema:ISSN ;
+        sh:maxCount 1 ;
+        sh:datatype xsd:string ;
+        sh:severity sh:Violation ;
+        sh:message "schema:ISSN must be a single string literal." ;
+    ] ;
+    sh:property [
+        sh:path schema:EISSN ;
+        sh:maxCount 1 ;
+        sh:datatype xsd:string ;
+        sh:severity sh:Violation ;
+        sh:message "schema:EISSN must be a single string literal." ;
+    ] ;
+
+    # --- identifiers ------------------------------------------------------
+    # dc:identifier is an IRI *here* (https://doi.org/...). Note that on the
+    # enrichment blank nodes the same predicate carries a plain literal DOI
+    # string, so its node kind is constrained per shape, never globally.
+    sh:property [
+        sh:path dc:identifier ;
+        sh:maxCount 1 ;
+        sh:nodeKind sh:IRI ;
+        sh:pattern "^https://doi\\.org/" ;
+        sh:severity sh:Violation ;
+        sh:message "dc:identifier on a paper node must be a single resolvable DOI IRI of the form https://doi.org/<suffix>." ;
+    ] ;
+    sh:property [
+        sh:path aid-pais:pubmedId ;
+        sh:maxCount 1 ;
+        sh:datatype xsd:string ;
+        sh:severity sh:Violation ;
+        sh:message "aid-pais:pubmedId must be a single string literal." ;
+    ] ;
+    sh:property [
+        sh:path aid-pais:pmcId ;
+        sh:maxCount 1 ;
+        sh:datatype xsd:string ;
+        sh:severity sh:Violation ;
+        sh:message "aid-pais:pmcId must be a single string literal." ;
+    ] ;
+    sh:property [
+        sh:path aid-pais:europePMCId ;
+        sh:maxCount 1 ;
+        sh:datatype xsd:string ;
+        sh:severity sh:Violation ;
+        sh:message "aid-pais:europePMCId must be a single string literal (e.g. 'pmid:35442597')." ;
+    ] ;
+    sh:property [
+        sh:path schema:sameAs ;
+        sh:nodeKind sh:IRI ;
+        sh:severity sh:Violation ;
+        sh:message "schema:sameAs must be an IRI (the PubMed / PMC landing page for this paper), not a literal." ;
+    ] ;
+    sh:property [
+        sh:path aid-pais:semanticScholarId ;
+        sh:maxCount 1 ;
+        sh:nodeKind sh:IRI ;
+        sh:severity sh:Violation ;
+        sh:message "aid-pais:semanticScholarId must be a single IRI (https://www.semanticscholar.org/paper/<id>), not a bare id literal." ;
+    ] ;
+    sh:property [
+        sh:path aid-pais:semanticScholarCorpusId ;
+        sh:maxCount 1 ;
+        sh:nodeKind sh:Literal ;
+        sh:severity sh:Violation ;
+        sh:message "aid-pais:semanticScholarCorpusId must be a single literal (the numeric Corpus ID)." ;
+    ] ;
+    sh:property [
+        sh:path aid-pais:openAlexId ;
+        sh:maxCount 1 ;
+        sh:nodeKind sh:IRI ;
+        sh:severity sh:Violation ;
+        sh:message "aid-pais:openAlexId must be a single IRI (https://openalex.org/<id>), not a bare id literal." ;
+    ] ;
+
+    # --- access and full text ---------------------------------------------
+    # isAccessibleForFree is written unconditionally, so minCount is a
+    # Violation. This is the constraint that matched nothing before the
+    # HTTPS fix described in the header.
+    sh:property [
+        sh:path schema:isAccessibleForFree ;
+        sh:minCount 1 ;
+        sh:maxCount 1 ;
+        sh:datatype xsd:boolean ;
+        sh:severity sh:Violation ;
+        sh:message "DocumentMetadata must record exactly one https://schema.org/isAccessibleForFree xsd:boolean. The builder writes it unconditionally, so a missing value means the node did not come from DocumentMetadataRDFBuilder." ;
+    ] ;
+    sh:property [
+        sh:path schema:accessMode ;
+        sh:maxCount 1 ;
+        sh:datatype xsd:string ;
+        sh:severity sh:Violation ;
+        sh:message "schema:accessMode must be a single string literal (the open-access status: 'gold', 'green', 'closed', ...)." ;
+    ] ;
+    sh:property [
+        sh:path schema:license ;
+        sh:maxCount 1 ;
+        sh:datatype xsd:string ;
+        sh:severity sh:Violation ;
+        sh:message "schema:license must be a single string literal (the licence identifier)." ;
+    ] ;
+    sh:property [
+        sh:path schema:licenseUrl ;
+        sh:maxCount 1 ;
+        sh:datatype xsd:string ;
+        sh:severity sh:Violation ;
+        sh:message "schema:licenseUrl must be a single string literal. (The builder writes the URL as a literal, not an IRI -- match the code, not the intuition.)" ;
+    ] ;
+    sh:property [
+        sh:path schema:readLink ;
+        sh:maxCount 1 ;
+        sh:datatype xsd:string ;
+        sh:severity sh:Violation ;
+        sh:message "schema:readLink must be a single string literal holding the full-text URL." ;
+    ] ;
+    sh:property [
+        sh:path aid-pais:hasPDF ;
+        sh:maxCount 1 ;
+        sh:datatype xsd:boolean ;
+        sh:severity sh:Violation ;
+        sh:message "aid-pais:hasPDF must be a single xsd:boolean." ;
+    ] ;
+    sh:property [
+        sh:path aid-pais:fullTextAvailable ;
+        sh:maxCount 1 ;
+        sh:datatype xsd:boolean ;
+        sh:severity sh:Violation ;
+        sh:message "aid-pais:fullTextAvailable must be a single xsd:boolean." ;
+    ] ;
+    sh:property [
+        sh:path aid-pais:fullTextSource ;
+        sh:maxCount 1 ;
+        sh:datatype xsd:string ;
+        sh:severity sh:Violation ;
+        sh:message "aid-pais:fullTextSource must be a single string literal." ;
+    ] ;
+
+    # --- attached sub-records ---------------------------------------------
+    sh:property [
+        sh:path aid-pais:hasOrganization ;
+        sh:nodeKind sh:IRI ;
+        sh:severity sh:Violation ;
+        sh:message "aid-pais:hasOrganization must point at an aid-pais:Organization IRI." ;
+    ] ;
+    sh:property [
+        sh:path aid-pais:hasCitationInfo ;
+        sh:maxCount 1 ;
+        sh:nodeKind sh:BlankNode ;
+        sh:severity sh:Violation ;
+        sh:message "aid-pais:hasCitationInfo must be a single blank node." ;
+    ] ;
+    sh:property [
+        sh:path aid-pais:hasCrossrefMetadata ;
+        sh:maxCount 1 ;
+        sh:nodeKind sh:BlankNode ;
+        sh:severity sh:Violation ;
+        sh:message "aid-pais:hasCrossrefMetadata must be a single blank node." ;
+    ] ;
+    sh:property [
+        sh:path aid-pais:hasSemanticScholarMetadata ;
+        sh:maxCount 1 ;
+        sh:nodeKind sh:BlankNode ;
+        sh:severity sh:Violation ;
+        sh:message "aid-pais:hasSemanticScholarMetadata must be a single blank node." ;
+    ] ;
+    sh:property [
+        sh:path aid-pais:hasOpenAlexMetadata ;
+        sh:maxCount 1 ;
+        sh:nodeKind sh:BlankNode ;
+        sh:severity sh:Violation ;
+        sh:message "aid-pais:hasOpenAlexMetadata must be a single blank node." ;
+    ] ;
+    sh:property [
+        sh:path aid-pais:hasUnpaywallMetadata ;
+        sh:maxCount 1 ;
+        sh:nodeKind sh:BlankNode ;
+        sh:severity sh:Violation ;
+        sh:message "aid-pais:hasUnpaywallMetadata must be a single blank node." ;
+    ] ;
+    sh:property [
+        sh:path aid-pais:hasDataCiteMetadata ;
+        sh:maxCount 1 ;
+        sh:nodeKind sh:BlankNode ;
+        sh:severity sh:Violation ;
+        sh:message "aid-pais:hasDataCiteMetadata must be a single blank node." ;
+    ] ;
+    sh:property [
+        sh:path aid-pais:hasParsingEnsemble ;
+        sh:maxCount 1 ;
+        sh:nodeKind sh:BlankNode ;
+        sh:severity sh:Violation ;
+        sh:message "aid-pais:hasParsingEnsemble must be a single blank node." ;
+    ] ;
+    sh:property [
+        sh:path aid-pais:hasOntologyMapping ;
+        sh:nodeKind sh:BlankNode ;
+        sh:severity sh:Violation ;
+        sh:message "aid-pais:hasOntologyMapping must point at blank nodes." ;
+    ] ;
+
+    # --- provenance -------------------------------------------------------
+    # NOTE the object kind: on a paper node prov:wasGeneratedBy carries a
+    # plain LITERAL pipeline name, while on Observation/EntityMention it
+    # carries an IRI. That is why nodeKind is constrained here and in
+    # observation.shacl.ttl separately, and never globally in
+    # provenance.shacl.ttl.
+    sh:property [
+        sh:path prov:wasGeneratedBy ;
+        sh:minCount 1 ;
+        sh:maxCount 1 ;
+        sh:nodeKind sh:Literal ;
+        sh:datatype xsd:string ;
+        sh:severity sh:Violation ;
+        sh:message "DocumentMetadata must record exactly one prov:wasGeneratedBy as a plain literal naming the pipeline (e.g. 'document-metadata-extraction-pipeline'). Without it the paper node cannot be attributed to a build." ;
+    ] ;
+    sh:property [
+        sh:path prov:generatedAtTime ;
+        sh:maxCount 1 ;
+        sh:datatype xsd:dateTime ;
+        sh:severity sh:Violation ;
+        sh:message "prov:generatedAtTime must be a single xsd:dateTime literal." ;
+    ] ;
+    sh:property [
+        sh:path aid-pais:enrichmentRetrievedAt ;
+        sh:maxCount 1 ;
+        sh:datatype xsd:dateTime ;
+        sh:severity sh:Violation ;
+        sh:message "aid-pais:enrichmentRetrievedAt must be a single xsd:dateTime literal." ;
+    ] .
+
+
+# A paper must be reachable by at least one persistent identifier, otherwise
+# it cannot be deduplicated, cited or merged into the cross-run corpus.
+mecfssh:DocumentIdentifierShape a sh:NodeShape ;
+    rdfs:label "Document has a persistent identifier" ;
+    rdfs:comment "At least one of DOI (dc:identifier), Europe PMC id, PMID, PMCID or a schema:sameAs landing page. Every paper node in current real output carries at least aid-pais:europePMCId, so this is a Violation: a node that fails it is unusable for deduplication and for the sticky corpus UIDs." ;
+    sh:targetClass aid-pais:DocumentMetadata ;
+    sh:severity sh:Violation ;
+    sh:message "DocumentMetadata carries no persistent identifier: none of dc:identifier (DOI), aid-pais:europePMCId, aid-pais:pubmedId, aid-pais:pmcId or schema:sameAs is present. The paper cannot be deduplicated or given a stable corpus UID." ;
+    sh:or (
+        [ sh:property [ sh:path dc:identifier        ; sh:minCount 1 ] ]
+        [ sh:property [ sh:path aid-pais:europePMCId ; sh:minCount 1 ] ]
+        [ sh:property [ sh:path aid-pais:pubmedId    ; sh:minCount 1 ] ]
+        [ sh:property [ sh:path aid-pais:pmcId       ; sh:minCount 1 ] ]
+        [ sh:property [ sh:path schema:sameAs        ; sh:minCount 1 ] ]
+    ) .
+
+
+# Completeness goals. These describe metadata the pipeline is *supposed* to
+# capture but currently loses, so they are deliberately NOT Violations --
+# raising them would make CI permanently red on real runs.
+mecfssh:DocumentMetadataCompletenessShape a sh:NodeShape ;
+    rdfs:label "Document metadata completeness" ;
+    rdfs:comment "Data-quality checks on the paper node. In the most recent real runs every single DocumentMetadata node has an EMPTY dc:title and an EMPTY rdfs:label -- a genuine defect in the normalize/document-metadata path, worth reporting on every run, but not something that should block CI until it is fixed. Warning severity is the point of these shapes, not an oversight." ;
+    sh:targetClass aid-pais:DocumentMetadata ;
+
+    sh:property [
+        sh:path dc:title ;
+        sh:minLength 1 ;
+        sh:severity sh:Warning ;
+        sh:message "DocumentMetadata has an empty dc:title. Every paper node in the most recent runs is affected: the title is lost somewhere between normalization and the RDF builder, leaving papers unreadable in the graph. Reported as a Warning so the known defect does not block CI." ;
+    ] ;
+    sh:property [
+        sh:path rdfs:label ;
+        sh:minLength 1 ;
+        sh:severity sh:Warning ;
+        sh:message "DocumentMetadata has an empty rdfs:label. Same root cause as the empty dc:title: both are written from metadata.title. Warning, not Violation, because all real runs currently trip it." ;
+    ] ;
+    sh:property [
+        sh:path prov:generatedAtTime ;
+        sh:minCount 1 ;
+        sh:severity sh:Warning ;
+        sh:message "DocumentMetadata records no prov:generatedAtTime, so there is no way to tell when this paper's metadata was retrieved." ;
+    ] ;
+    sh:property [
+        sh:path schema:author ;
+        sh:minCount 1 ;
+        sh:severity sh:Info ;
+        sh:message "DocumentMetadata lists no schema:author. Advisory: author records are dropped whenever the upstream record has no author list, which also costs the graph its Person and affiliation nodes." ;
+    ] .
+
+
+#############################################################################
+# Supporting nodes reached from the paper -- light shapes
+#############################################################################
+
+mecfssh:PersonShape a sh:NodeShape ;
+    rdfs:label "Person shape" ;
+    rdfs:comment "An author node. rdfs:label is written unconditionally by the builder; the schema.org name parts and the affiliation link are optional." ;
+    sh:targetClass aid-pais:Person ;
+    sh:property [
+        sh:path rdfs:label ;
+        sh:minCount 1 ;
+        sh:maxCount 1 ;
+        sh:datatype xsd:string ;
+        sh:severity sh:Violation ;
+        sh:message "Person must have exactly one rdfs:label (the author's display name)." ;
+    ] ;
+    sh:property [
+        sh:path schema:familyName ;
+        sh:maxCount 1 ;
+        sh:datatype xsd:string ;
+        sh:severity sh:Violation ;
+        sh:message "schema:familyName must be a single string literal." ;
+    ] ;
+    sh:property [
+        sh:path schema:givenName ;
+        sh:maxCount 1 ;
+        sh:datatype xsd:string ;
+        sh:severity sh:Violation ;
+        sh:message "schema:givenName must be a single string literal." ;
+    ] ;
+    sh:property [
+        sh:path schema:name ;
+        sh:maxCount 1 ;
+        sh:datatype xsd:string ;
+        sh:severity sh:Violation ;
+        sh:message "schema:name must be a single string literal." ;
+    ] ;
+    sh:property [
+        sh:path schema:affiliation ;
+        sh:nodeKind sh:IRI ;
+        sh:severity sh:Violation ;
+        sh:message "schema:affiliation must point at an aid-pais:Organization IRI, not an affiliation string." ;
+    ] ;
+    sh:property [
+        sh:path schema:sameAs ;
+        sh:nodeKind sh:IRI ;
+        sh:severity sh:Violation ;
+        sh:message "A Person's schema:sameAs must be an IRI: the ORCID (https://orcid.org/...) or the OpenAlex author (https://openalex.org/A...)." ;
+    ] .
+
+
+mecfssh:JournalShape a sh:NodeShape ;
+    rdfs:label "Journal shape" ;
+    rdfs:comment "The publication venue node reached through schema:publication." ;
+    sh:targetClass aid-pais:Journal ;
+    sh:property [
+        sh:path rdfs:label ;
+        sh:minCount 1 ;
+        sh:maxCount 1 ;
+        sh:datatype xsd:string ;
+        sh:severity sh:Violation ;
+        sh:message "Journal must have exactly one rdfs:label (the journal name)." ;
+    ] .
+
+
+mecfssh:OrganizationShape a sh:NodeShape ;
+    rdfs:label "Organization shape" ;
+    rdfs:comment "An affiliation / ROR-resolved institution. Two flavours occur: a bare node with only a label (minted from an affiliation string) and a fully ROR-enriched node with rorId, address, country and type. Note schema:url and schema:identifier are string literals here, not IRIs -- the builder writes them that way." ;
+    sh:targetClass aid-pais:Organization ;
+    sh:property [
+        sh:path rdfs:label ;
+        sh:minCount 1 ;
+        sh:maxCount 1 ;
+        sh:datatype xsd:string ;
+        sh:severity sh:Violation ;
+        sh:message "Organization must have exactly one rdfs:label (the institution name)." ;
+    ] ;
+    sh:property [
+        sh:path aid-pais:rorId ;
+        sh:maxCount 1 ;
+        sh:datatype xsd:string ;
+        sh:severity sh:Violation ;
+        sh:message "aid-pais:rorId must be a single string literal." ;
+    ] ;
+    sh:property [
+        sh:path aid-pais:status ;
+        sh:maxCount 1 ;
+        sh:datatype xsd:string ;
+        sh:severity sh:Violation ;
+        sh:message "aid-pais:status must be a single string literal." ;
+    ] ;
+    sh:property [
+        sh:path aid-pais:types ;
+        sh:maxCount 1 ;
+        sh:datatype xsd:string ;
+        sh:severity sh:Violation ;
+        sh:message "aid-pais:types must be a single string literal (the builder joins the ROR type list with ', ')." ;
+    ] ;
+    sh:property [
+        sh:path aid-pais:domains ;
+        sh:maxCount 1 ;
+        sh:datatype xsd:string ;
+        sh:severity sh:Violation ;
+        sh:message "aid-pais:domains must be a single comma-joined string literal." ;
+    ] ;
+    sh:property [
+        sh:path schema:identifier ;
+        sh:maxCount 1 ;
+        sh:datatype xsd:string ;
+        sh:severity sh:Violation ;
+        sh:message "schema:identifier must be a single string literal (the ROR id)." ;
+    ] ;
+    sh:property [
+        sh:path schema:address ;
+        sh:maxCount 1 ;
+        sh:datatype xsd:string ;
+        sh:severity sh:Violation ;
+        sh:message "schema:address must be a single string literal (the city)." ;
+    ] ;
+    sh:property [
+        sh:path schema:addressCountry ;
+        sh:maxCount 1 ;
+        sh:datatype xsd:string ;
+        sh:severity sh:Violation ;
+        sh:message "schema:addressCountry must be a single string literal (the country code)." ;
+    ] ;
+    sh:property [
+        sh:path schema:url ;
+        sh:maxCount 1 ;
+        sh:datatype xsd:string ;
+        sh:severity sh:Violation ;
+        sh:message "schema:url must be a single string literal. The builder writes the website as a literal rather than an IRI -- the shape follows the code." ;
+    ] ;
+    sh:property [
+        sh:path schema:foundingDate ;
+        sh:maxCount 1 ;
+        sh:datatype xsd:string ;
+        sh:severity sh:Violation ;
+        sh:message "schema:foundingDate must be a single string literal (the builder stringifies the founding year rather than typing it xsd:gYear)." ;
+    ] .
+
+
+mecfssh:CitationInfoShape a sh:NodeShape ;
+    rdfs:label "Citation info shape" ;
+    rdfs:comment "The blank node hanging off aid-pais:hasCitationInfo. Every field is optional -- a CitationInfo node with nothing but its rdf:type is normal for an uncited paper." ;
+    sh:targetClass aid-pais:CitationInfo ;
+    sh:property [
+        sh:path schema:citationCount ;
+        sh:maxCount 1 ;
+        sh:datatype xsd:integer ;
+        sh:minInclusive 0 ;
+        sh:severity sh:Violation ;
+        sh:message "schema:citationCount must be a single non-negative xsd:integer." ;
+    ] ;
+    sh:property [
+        sh:path aid-pais:referencesCount ;
+        sh:maxCount 1 ;
+        sh:datatype xsd:integer ;
+        sh:minInclusive 0 ;
+        sh:severity sh:Violation ;
+        sh:message "aid-pais:referencesCount must be a single non-negative xsd:integer." ;
+    ] ;
+    sh:property [
+        sh:path aid-pais:citationNetworkSize ;
+        sh:maxCount 1 ;
+        sh:datatype xsd:integer ;
+        sh:minInclusive 0 ;
+        sh:severity sh:Violation ;
+        sh:message "aid-pais:citationNetworkSize must be a single non-negative xsd:integer." ;
+    ] ;
+    sh:property [
+        sh:path aid-pais:citationPercentileSource ;
+        sh:maxCount 1 ;
+        sh:datatype xsd:string ;
+        sh:severity sh:Violation ;
+        sh:message "aid-pais:citationPercentileSource must be a single string literal." ;
+    ] .
+
+
+mecfssh:EnrichmentMetadataShape a sh:NodeShape ;
+    rdfs:label "External enrichment metadata shape" ;
+    rdfs:comment "The blank nodes attached by aid-pais:has{Crossref,SemanticScholar,OpenAlex,Unpaywall,DataCite}Metadata. One shape covers all five because they share a vocabulary. dc:identifier is deliberately left un-nodeKind-constrained here: the OpenAlex node writes it as a DOI IRI while the Crossref, Unpaywall and DataCite nodes write the same predicate as a plain DOI string." ;
+    sh:targetClass
+        aid-pais:CrossrefMetadata,
+        aid-pais:SemanticScholarMetadata,
+        aid-pais:OpenAlexMetadata,
+        aid-pais:ICiteMetadata,
+        aid-pais:UnpaywallMetadata,
+        aid-pais:DataCiteMetadata ;
+    sh:property [
+        sh:path dc:identifier ;
+        sh:maxCount 1 ;
+        sh:severity sh:Violation ;
+        sh:message "dc:identifier on an enrichment node must be a single value (a DOI)." ;
+    ] ;
+    sh:property [
+        sh:path dc:title ;
+        sh:maxCount 1 ;
+        sh:datatype xsd:string ;
+        sh:severity sh:Violation ;
+        sh:message "dc:title on an enrichment node must be a single string literal." ;
+    ] ;
+    sh:property [
+        sh:path schema:datePublished ;
+        sh:maxCount 1 ;
+        sh:datatype xsd:gYear ;
+        sh:severity sh:Violation ;
+        sh:message "schema:datePublished on an enrichment node must be a single xsd:gYear literal." ;
+    ] ;
+    sh:property [
+        sh:path schema:citationCount ;
+        sh:maxCount 1 ;
+        sh:datatype xsd:integer ;
+        sh:minInclusive 0 ;
+        sh:severity sh:Violation ;
+        sh:message "schema:citationCount must be a single non-negative xsd:integer." ;
+    ] ;
+    sh:property [
+        sh:path schema:isAccessibleForFree ;
+        sh:maxCount 1 ;
+        sh:datatype xsd:boolean ;
+        sh:severity sh:Violation ;
+        sh:message "schema:isAccessibleForFree must be a single xsd:boolean." ;
+    ] ;
+    sh:property [
+        sh:path schema:accessMode ;
+        sh:maxCount 1 ;
+        sh:datatype xsd:string ;
+        sh:severity sh:Violation ;
+        sh:message "schema:accessMode must be a single string literal (the OA status)." ;
+    ] ;
+    sh:property [
+        sh:path schema:publisher ;
+        sh:maxCount 1 ;
+        sh:datatype xsd:string ;
+        sh:severity sh:Violation ;
+        sh:message "schema:publisher must be a single string literal." ;
+    ] ;
+    sh:property [
+        sh:path schema:publication ;
+        sh:maxCount 1 ;
+        sh:datatype xsd:string ;
+        sh:severity sh:Violation ;
+        sh:message "schema:publication on an enrichment node must be a single string literal (the venue name). On the paper node the same predicate is an IRI instead -- hence the per-shape constraint." ;
+    ] ;
+    sh:property [
+        sh:path schema:volumeNumber ;
+        sh:maxCount 1 ;
+        sh:datatype xsd:string ;
+        sh:severity sh:Violation ;
+        sh:message "schema:volumeNumber must be a single string literal." ;
+    ] ;
+    sh:property [
+        sh:path schema:isPartOf ;
+        sh:maxCount 1 ;
+        sh:datatype xsd:string ;
+        sh:severity sh:Violation ;
+        sh:message "schema:isPartOf on a Crossref node must be a single string literal (the container title, joined with ' | ')." ;
+    ] .
+
+
+mecfssh:DoiDocumentShape a sh:NodeShape ;
+    rdfs:label "DOI document node" ;
+    rdfs:comment "The https://doi.org/... node minted alongside dc:identifier and typed https://schema.org/DigitalDocument. It exists only to carry the bare DOI string as its label." ;
+    sh:targetClass schema:DigitalDocument ;
+    sh:property [
+        sh:path rdfs:label ;
+        sh:minCount 1 ;
+        sh:maxCount 1 ;
+        sh:datatype xsd:string ;
+        sh:minLength 1 ;
+        sh:severity sh:Violation ;
+        sh:message "The DOI document node must carry exactly one non-empty rdfs:label holding the bare DOI string." ;
+    ] .
+
+
+#############################################################################
+# iCite scores
+#
+# The point of carrying iCite is the field-normalised measures, so these check
+# that they are usable rather than merely present: a ratio that is negative, or
+# a percentile outside 0-100, is a parsing error rather than a finding.
+#############################################################################
+
+mecfssh:ICiteScoreShape a sh:NodeShape ;
+    rdfs:label "iCite score ranges" ;
+    rdfs:comment "Range checks on the NIH iCite bibliometrics. The emitter only writes these when the source supplied them, so every constraint here is maxCount/range rather than minCount -- an iCite node carrying nothing but its rdf:type is normal for a paper iCite does not cover." ;
+    sh:targetClass aid-pais:ICiteMetadata ;
+
+    sh:property [
+        sh:path aid-pais:relativeCitationRatio ;
+        sh:maxCount 1 ;
+        sh:datatype xsd:double ;
+        sh:minInclusive 0.0 ;
+        sh:severity sh:Violation ;
+        sh:message "relativeCitationRatio must be a single non-negative xsd:double. RCR is normalised so 1.0 is the NIH-funded average for the paper's field and year; a negative value means the source field was misread." ;
+    ] ;
+    sh:property [
+        sh:path aid-pais:fieldCitationRatio ;
+        sh:maxCount 1 ;
+        sh:datatype xsd:double ;
+        sh:minInclusive 0.0 ;
+        sh:severity sh:Violation ;
+        sh:message "fieldCitationRatio must be a single non-negative xsd:double." ;
+    ] ;
+    sh:property [
+        sh:path aid-pais:expectedCitations ;
+        sh:maxCount 1 ;
+        sh:datatype xsd:double ;
+        sh:minInclusive 0.0 ;
+        sh:severity sh:Violation ;
+        sh:message "expectedCitations must be a single non-negative xsd:double -- it is the denominator behind the relative citation ratio." ;
+    ] ;
+    sh:property [
+        sh:path aid-pais:citationPercentile ;
+        sh:maxCount 1 ;
+        sh:minInclusive 0.0 ;
+        sh:maxInclusive 100.0 ;
+        sh:severity sh:Violation ;
+        sh:message "citationPercentile must be a single value in [0, 100]." ;
+    ] ;
+    sh:property [
+        sh:path aid-pais:isResearchArticle ;
+        sh:maxCount 1 ;
+        sh:datatype xsd:boolean ;
+        sh:severity sh:Violation ;
+    ] ;
+    sh:property [
+        sh:path aid-pais:provisionalMetrics ;
+        sh:maxCount 1 ;
+        sh:datatype xsd:boolean ;
+        sh:severity sh:Violation ;
+        sh:message "provisionalMetrics must be a single xsd:boolean. It marks figures the source considers still unstable, so a consumer computing trends can exclude them." ;
+    ] .
+
+
+mecfssh:CitationPercentileProvenanceShape a sh:NodeShape ;
+    rdfs:label "A percentile names its source" ;
+    rdfs:comment "Europe PMC and NIH iCite both attach a citationPercentile to the same paper, computed against different reference populations, so a percentile without a stated source is not interpretable -- the two are not interchangeable and nothing downstream could tell them apart. The emitter writes citationPercentileSource in the same branch as the percentile, so this holds today and is a Violation." ;
+    sh:targetSubjectsOf aid-pais:citationPercentile ;
+    sh:property [
+        sh:path aid-pais:citationPercentileSource ;
+        sh:minCount 1 ;
+        sh:minLength 1 ;
+        sh:severity sh:Violation ;
+        sh:message "A node carrying aid-pais:citationPercentile must also carry aid-pais:citationPercentileSource naming which provider computed it (e.g. \"nih-icite\"). Europe PMC and iCite percentiles use different reference populations and cannot be compared." ;
+    ] .
+
+
+#############################################################################
+# What the graph keeps beyond the bare bibliography
+#
+# Added with the identity / profile work: the paper's sticky UID, its abstract,
+# MeSH headings, OpenAlex topics, funding, and the profile properties a
+# downstream step reads before spending anything on the paper. Authors are
+# shared across papers; the position and institutions of one paper's authorship
+# hang on an aid-pais:Authorship node.
+#############################################################################
+
+mecfssh:DocumentProfileShape a sh:NodeShape ;
+    rdfs:label "Document profile shape" ;
+    rdfs:comment "The properties DocumentMetadataRDFBuilder writes to make the paper node a usable backbone: identity, abstract, relevance, record kind, licence class, full-text route, subjects, topics, funding, authorship, duplicate links." ;
+    sh:targetClass aid-pais:DocumentMetadata ;
+    sh:property [
+        sh:path aid-pais:corpusUid ;
+        sh:maxCount 1 ;
+        sh:datatype xsd:string ;
+        sh:pattern "^aidpais:[0-9a-f]{12}$" ;
+        sh:severity sh:Violation ;
+        sh:message "aid-pais:corpusUid must be a single sticky UID of the form aidpais:<12 hex> (corpus/identity.py)." ;
+    ] ;
+    sh:property [
+        sh:path schema:abstract ;
+        sh:maxCount 1 ;
+        sh:datatype xsd:string ;
+        sh:severity sh:Violation ;
+        sh:message "schema:abstract must be a single plain-text string literal (markup stripped)." ;
+    ] ;
+    sh:property [
+        sh:path aid-pais:sourceDatabase ;
+        sh:maxCount 1 ;
+        sh:datatype xsd:string ;
+        sh:severity sh:Violation ;
+        sh:message "aid-pais:sourceDatabase must be a single string (the Europe PMC source: MED, PMC, PPR, PAT, ETH, ...)." ;
+    ] ;
+    sh:property [
+        sh:path aid-pais:recordKind ;
+        sh:maxCount 1 ;
+        sh:in ( "journal_article" "review" "systematic_review" "randomized_trial" "case_report" "editorial" "notice" "preprint" "patent" "thesis" "other" ) ;
+        sh:severity sh:Violation ;
+        sh:message "aid-pais:recordKind must be one of journal_article, review, systematic_review, randomized_trial, case_report, editorial, notice, preprint, patent, thesis, other." ;
+    ] ;
+    sh:property [
+        sh:path aid-pais:relevance ;
+        sh:maxCount 1 ;
+        sh:in ( "title" "abstract" "index_term" "none" ) ;
+        sh:severity sh:Violation ;
+        sh:message "aid-pais:relevance must be title, abstract, index_term or none: where the ME/CFS / Long COVID terms occur in the paper's metadata." ;
+    ] ;
+    sh:property [
+        sh:path aid-pais:diseaseFocus ;
+        sh:maxCount 1 ;
+        sh:in ( "me_cfs" "long_covid" "both" ) ;
+        sh:severity sh:Violation ;
+        sh:message "aid-pais:diseaseFocus must be me_cfs, long_covid or both." ;
+    ] ;
+    sh:property [
+        sh:path aid-pais:licenseClass ;
+        sh:maxCount 1 ;
+        sh:in ( "open" "share_alike" "non_commercial" "no_derivatives" "non_commercial_no_derivatives" "other" "unlicensed" ) ;
+        sh:severity sh:Violation ;
+        sh:message "aid-pais:licenseClass must be open, share_alike, non_commercial, no_derivatives, non_commercial_no_derivatives, other or unlicensed." ;
+    ] ;
+    sh:property [
+        sh:path aid-pais:fullTextRoute ;
+        sh:maxCount 1 ;
+        sh:in ( "pmc" "publisher" "none" ) ;
+        sh:severity sh:Violation ;
+        sh:message "aid-pais:fullTextRoute must be pmc, publisher or none." ;
+    ] ;
+    sh:property [
+        sh:path dcterms:subject ;
+        sh:nodeKind sh:IRI ;
+        sh:class aid-pais:MeshHeading ;
+        sh:severity sh:Violation ;
+        sh:message "dcterms:subject must point at an aid-pais:MeshHeading." ;
+    ] ;
+    sh:property [
+        sh:path schema:about ;
+        sh:nodeKind sh:IRI ;
+        sh:class aid-pais:Topic ;
+        sh:severity sh:Violation ;
+        sh:message "schema:about must point at an aid-pais:Topic (an OpenAlex topic)." ;
+    ] ;
+    sh:property [
+        sh:path aid-pais:primaryTopic ;
+        sh:maxCount 1 ;
+        sh:nodeKind sh:IRI ;
+        sh:severity sh:Violation ;
+        sh:message "aid-pais:primaryTopic must be a single topic IRI (the highest-scoring OpenAlex topic)." ;
+    ] ;
+    sh:property [
+        sh:path schema:funding ;
+        sh:nodeKind sh:IRI ;
+        sh:class aid-pais:Grant ;
+        sh:severity sh:Violation ;
+        sh:message "schema:funding must point at an aid-pais:Grant." ;
+    ] ;
+    sh:property [
+        sh:path aid-pais:hasAuthorship ;
+        sh:nodeKind sh:IRI ;
+        sh:class aid-pais:Authorship ;
+        sh:severity sh:Violation ;
+        sh:message "aid-pais:hasAuthorship must point at an aid-pais:Authorship." ;
+    ] ;
+    sh:property [
+        sh:path aid-pais:possibleDuplicateOf ;
+        sh:nodeKind sh:IRI ;
+        sh:class aid-pais:DocumentMetadata ;
+        sh:severity sh:Violation ;
+        sh:message "aid-pais:possibleDuplicateOf must point at another aid-pais:DocumentMetadata." ;
+    ] .
+
+
+mecfssh:AuthorshipShape a sh:NodeShape ;
+    rdfs:label "Authorship shape" ;
+    rdfs:comment "One author on one paper: the (shared) person, the position on this paper, and the institutions this paper lists for them." ;
+    sh:targetClass aid-pais:Authorship ;
+    sh:property [
+        sh:path aid-pais:person ;
+        sh:minCount 1 ;
+        sh:maxCount 1 ;
+        sh:nodeKind sh:IRI ;
+        sh:class aid-pais:Person ;
+        sh:severity sh:Violation ;
+        sh:message "An Authorship must name exactly one aid-pais:Person." ;
+    ] ;
+    sh:property [
+        sh:path aid-pais:position ;
+        sh:minCount 1 ;
+        sh:maxCount 1 ;
+        sh:datatype xsd:integer ;
+        sh:minInclusive 1 ;
+        sh:severity sh:Violation ;
+        sh:message "An Authorship must have exactly one author position (an integer, 1 = first)." ;
+    ] ;
+    sh:property [
+        sh:path schema:affiliation ;
+        sh:nodeKind sh:IRI ;
+        sh:class aid-pais:Organization ;
+        sh:severity sh:Violation ;
+        sh:message "An Authorship's schema:affiliation must point at an aid-pais:Organization that the paper's ROR step wrote." ;
+    ] .
+
+
+mecfssh:MeshHeadingShape a sh:NodeShape ;
+    rdfs:label "MeSH heading shape" ;
+    sh:targetClass aid-pais:MeshHeading ;
+    sh:property [
+        sh:path rdfs:label ;
+        sh:minCount 1 ;
+        sh:maxCount 1 ;
+        sh:datatype xsd:string ;
+        sh:severity sh:Violation ;
+        sh:message "A MeshHeading must have exactly one rdfs:label (the heading name)." ;
+    ] .
+
+
+mecfssh:TopicShape a sh:NodeShape ;
+    rdfs:label "Topic shape" ;
+    sh:targetClass aid-pais:Topic ;
+    sh:property [
+        sh:path rdfs:label ;
+        sh:minCount 1 ;
+        sh:maxCount 1 ;
+        sh:datatype xsd:string ;
+        sh:severity sh:Violation ;
+        sh:message "A Topic must have exactly one rdfs:label (the OpenAlex topic name)." ;
+    ] ;
+    sh:property [
+        sh:path schema:sameAs ;
+        sh:nodeKind sh:IRI ;
+        sh:severity sh:Violation ;
+        sh:message "A Topic's schema:sameAs must be the OpenAlex topic IRI." ;
+    ] .
+
+
+mecfssh:GrantShape a sh:NodeShape ;
+    rdfs:label "Grant shape" ;
+    rdfs:comment "A funding grant, shared by every paper that cites the same (agency, grant id)." ;
+    sh:targetClass aid-pais:Grant ;
+    sh:property [
+        sh:path schema:identifier ;
+        sh:maxCount 1 ;
+        sh:datatype xsd:string ;
+        sh:severity sh:Violation ;
+        sh:message "A Grant has at most one schema:identifier (the grant number)." ;
+    ] ;
+    sh:property [
+        sh:path schema:funder ;
+        sh:maxCount 1 ;
+        sh:nodeKind sh:IRI ;
+        sh:class aid-pais:Funder ;
+        sh:severity sh:Violation ;
+        sh:message "A Grant has at most one schema:funder, an aid-pais:Funder." ;
+    ] .
+
+
+mecfssh:FunderShape a sh:NodeShape ;
+    rdfs:label "Funder shape" ;
+    sh:targetClass aid-pais:Funder ;
+    sh:property [
+        sh:path rdfs:label ;
+        sh:minCount 1 ;
+        sh:maxCount 1 ;
+        sh:datatype xsd:string ;
+        sh:severity sh:Violation ;
+        sh:message "A Funder must have exactly one rdfs:label (the agency name as the record gives it)." ;
+    ] .
+
+
+# ---------------------------------------------------------------------------
+# The full-text layer (pipelines/assembly/fulltext_rdf.py)
+# ---------------------------------------------------------------------------
+
+mecfssh:DocumentSectionShape a sh:NodeShape ;
+    rdfs:label "Document section shape" ;
+    sh:targetClass aid-pais:DocumentSection ;
+    sh:property [
+        sh:path aid-pais:sectionPosition ;
+        sh:minCount 1 ; sh:maxCount 1 ;
+        sh:datatype xsd:integer ;
+        sh:minInclusive 1 ;
+        sh:severity sh:Violation ;
+        sh:message "A DocumentSection has exactly one 1-based sectionPosition." ;
+    ] ;
+    sh:property [
+        sh:path aid-pais:sectionKind ;
+        sh:minCount 1 ; sh:maxCount 1 ;
+        sh:in ( "introduction" "methods" "results" "discussion" "references" "back_matter" "untitled" "other" ) ;
+        sh:severity sh:Violation ;
+        sh:message "aid-pais:sectionKind must be introduction, methods, results, discussion, references, back_matter, untitled or other." ;
+    ] ;
+    sh:property [
+        sh:path aid-pais:wordCount ;
+        sh:minCount 1 ; sh:maxCount 1 ;
+        sh:datatype xsd:integer ;
+        sh:minInclusive 0 ;
+        sh:severity sh:Violation ;
+        sh:message "A DocumentSection has exactly one non-negative wordCount." ;
+    ] .
+
+mecfssh:DocumentTableShape a sh:NodeShape ;
+    rdfs:label "Document table shape" ;
+    sh:targetClass aid-pais:DocumentTable ;
+    sh:property [
+        sh:path aid-pais:tablePosition ;
+        sh:minCount 1 ; sh:maxCount 1 ;
+        sh:datatype xsd:integer ;
+        sh:severity sh:Violation ;
+        sh:message "A DocumentTable has exactly one tablePosition." ;
+    ] ;
+    sh:property [
+        sh:path aid-pais:rowCount ;
+        sh:maxCount 1 ;
+        sh:datatype xsd:integer ;
+        sh:minInclusive 0 ;
+        sh:severity sh:Violation ;
+        sh:message "rowCount must be a non-negative integer." ;
+    ] .
+
+mecfssh:FullTextLayerShape a sh:NodeShape ;
+    rdfs:label "Full-text layer on a paper" ;
+    sh:targetSubjectsOf aid-pais:hasDocumentSection ;
+    sh:property [
+        sh:path aid-pais:hasDocumentSection ;
+        sh:nodeKind sh:IRI ;
+        sh:class aid-pais:DocumentSection ;
+        sh:severity sh:Violation ;
+        sh:message "hasDocumentSection must point at a typed DocumentSection node." ;
+    ] ;
+    sh:property [
+        sh:path aid-pais:fullTextAvailable ;
+        sh:minCount 1 ;
+        sh:hasValue true ;
+        sh:severity sh:Violation ;
+        sh:message "A paper with document sections has aid-pais:fullTextAvailable true." ;
+    ] ;
+    sh:property [
+        sh:path aid-pais:sectionCount ;
+        sh:minCount 1 ; sh:maxCount 1 ;
+        sh:datatype xsd:integer ;
+        sh:severity sh:Violation ;
+        sh:message "A paper with document sections states its sectionCount once." ;
+    ] ;
+    sh:property [
+        sh:path aid-pais:cites ;
+        sh:nodeKind sh:IRI ;
+        sh:class aid-pais:DocumentMetadata ;
+        sh:severity sh:Violation ;
+        sh:message "cites must point at another paper node of the corpus." ;
+    ] .
+
+
+mecfssh:KeywordShape a sh:NodeShape ;
+    rdfs:label "Keyword shape" ;
+    sh:targetClass aid-pais:Keyword ;
+    sh:property [
+        sh:path rdfs:label ;
+        sh:minCount 1 ;
+        sh:maxCount 1 ;
+        sh:datatype xsd:string ;
+        sh:severity sh:Violation ;
+        sh:message "A Keyword must have exactly one rdfs:label (the author keyword, lower-cased)." ;
+    ] .
+
+
+# ---------------------------------------------------------------------------
+# Europe PMC record extras, resources, citation contexts and text-mined terms
+# (pipelines/assembly/rdf_extras.py, fulltext_rdf.py)
+# ---------------------------------------------------------------------------
+
+mecfssh:RecordExtrasOnPaperShape a sh:NodeShape ;
+    rdfs:label "Record extras on a paper" ;
+    sh:targetClass aid-pais:DocumentMetadata ;
+    sh:property [
+        sh:path schema:inLanguage ;
+        sh:maxCount 1 ;
+        sh:pattern "^[a-z]{2}$" ;
+        sh:severity sh:Violation ;
+        sh:message "schema:inLanguage must be one ISO 639-1 code." ;
+    ] ;
+    sh:property [
+        sh:path aid-pais:integrityStatus ;
+        sh:in ( "retracted" "retraction_notice" "corrected" "erratum_notice"
+                "expression_of_concern" "expression_of_concern_notice" ) ;
+        sh:severity sh:Violation ;
+        sh:message "aid-pais:integrityStatus must be retracted, retraction_notice, corrected, erratum_notice, expression_of_concern or expression_of_concern_notice." ;
+    ] ;
+    sh:property [
+        sh:path aid-pais:hasBestOpenAccessLocation ;
+        sh:maxCount 1 ;
+        sh:class aid-pais:OpenAccessLocation ;
+        sh:severity sh:Violation ;
+        sh:message "A paper has at most one best open-access location." ;
+    ] ;
+    sh:property [
+        sh:path aid-pais:annotationStatus ;
+        sh:maxCount 1 ;
+        sh:in ( "complete" "partial" "unavailable" ) ;
+        sh:severity sh:Violation ;
+        sh:message "aid-pais:annotationStatus must be complete, partial or unavailable." ;
+    ] ;
+    sh:property [
+        sh:path aid-pais:annotationSource ;
+        sh:in ( "europepmc" "pubtator" ) ;
+        sh:severity sh:Violation ;
+        sh:message "aid-pais:annotationSource must be europepmc or pubtator." ;
+    ] ;
+    sh:property [
+        sh:path aid-pais:hasPreprint ;
+        sh:nodeKind sh:IRI ;
+        sh:class aid-pais:DocumentMetadata ;
+        sh:severity sh:Violation ;
+        sh:message "hasPreprint must point at another paper node of the corpus." ;
+    ] ;
+    sh:property [
+        sh:path aid-pais:preprintOf ;
+        sh:nodeKind sh:IRI ;
+        sh:class aid-pais:DocumentMetadata ;
+        sh:severity sh:Violation ;
+        sh:message "preprintOf must point at another paper node of the corpus." ;
+    ] ;
+    sh:property [
+        sh:path aid-pais:relatedWork ;
+        sh:nodeKind sh:IRI ;
+        sh:class aid-pais:DocumentMetadata ;
+        sh:severity sh:Violation ;
+        sh:message "relatedWork must point at another paper node of the corpus." ;
+    ] ;
+    sh:property [
+        sh:path aid-pais:citesExternal ;
+        sh:nodeKind sh:IRI ;
+        sh:class aid-pais:ExternalWork ;
+        sh:severity sh:Violation ;
+        sh:message "citesExternal must point at an ExternalWork node." ;
+    ] .
+
+mecfssh:RecordRelationShape a sh:NodeShape ;
+    rdfs:label "Record relation shape" ;
+    sh:targetClass aid-pais:RecordRelation ;
+    sh:property [
+        sh:path aid-pais:relationKind ;
+        sh:minCount 1 ; sh:maxCount 1 ;
+        sh:pattern "^[a-z_]+$" ;
+        sh:severity sh:Violation ;
+        sh:message "A RecordRelation has exactly one relationKind, a snake_case word." ;
+    ] ;
+    sh:property [
+        sh:path aid-pais:relatedRecordId ;
+        sh:maxCount 1 ;
+        sh:severity sh:Violation ;
+        sh:message "A RecordRelation names at most one related record." ;
+    ] ;
+    sh:property [
+        sh:path aid-pais:relatedPaper ;
+        sh:maxCount 1 ;
+        sh:nodeKind sh:IRI ;
+        sh:class aid-pais:DocumentMetadata ;
+        sh:severity sh:Violation ;
+        sh:message "relatedPaper must be one paper node of the corpus." ;
+    ] .
+
+mecfssh:SubstanceShape a sh:NodeShape ;
+    rdfs:label "Substance shape" ;
+    sh:targetClass aid-pais:Substance ;
+    sh:property [
+        sh:path rdfs:label ;
+        sh:minCount 1 ; sh:maxCount 1 ;
+        sh:severity sh:Violation ;
+        sh:message "A Substance has exactly one rdfs:label." ;
+    ] .
+
+mecfssh:DiscoverySourceShape a sh:NodeShape ;
+    rdfs:label "Discovery source shape" ;
+    sh:targetClass aid-pais:DiscoverySource ;
+    sh:property [
+        sh:path rdfs:label ;
+        sh:minCount 1 ; sh:maxCount 1 ;
+        sh:severity sh:Violation ;
+        sh:message "A DiscoverySource has exactly one rdfs:label." ;
+    ] .
+
+mecfssh:SourceHitShape a sh:NodeShape ;
+    rdfs:label "Source hit shape" ;
+    sh:targetClass aid-pais:SourceHit ;
+    sh:property [
+        sh:path aid-pais:fromSource ;
+        sh:minCount 1 ; sh:maxCount 1 ;
+        sh:class aid-pais:DiscoverySource ;
+        sh:severity sh:Violation ;
+        sh:message "A SourceHit comes from exactly one DiscoverySource." ;
+    ] ;
+    sh:property [
+        sh:path aid-pais:sourceRecordId ;
+        sh:maxCount 1 ;
+        sh:severity sh:Violation ;
+        sh:message "A SourceHit has at most one sourceRecordId." ;
+    ] ;
+    sh:property [
+        sh:path rdfs:label ;
+        sh:minCount 1 ; sh:maxCount 1 ;
+        sh:severity sh:Violation ;
+        sh:message "A SourceHit has exactly one rdfs:label." ;
+    ] .
+
+mecfssh:FullTextLinkShape a sh:NodeShape ;
+    rdfs:label "Full-text link shape" ;
+    sh:targetClass aid-pais:FullTextLink ;
+    sh:property [
+        sh:path schema:url ;
+        sh:minCount 1 ; sh:maxCount 1 ;
+        sh:datatype xsd:anyURI ;
+        sh:severity sh:Violation ;
+        sh:message "A FullTextLink has exactly one schema:url." ;
+    ] .
+
+mecfssh:OpenAccessLocationShape a sh:NodeShape ;
+    rdfs:label "Open-access location shape" ;
+    sh:targetClass aid-pais:OpenAccessLocation ;
+    sh:property [
+        sh:path schema:url ;
+        sh:minCount 1 ; sh:maxCount 1 ;
+        sh:datatype xsd:anyURI ;
+        sh:severity sh:Violation ;
+        sh:message "An OpenAccessLocation has exactly one schema:url." ;
+    ] ;
+    sh:property [
+        sh:path schema:license ;
+        sh:maxCount 1 ;
+        sh:severity sh:Violation ;
+        sh:message "An OpenAccessLocation has at most one licence." ;
+    ] .
+
+mecfssh:ResourceReferenceShape a sh:NodeShape ;
+    rdfs:label "Resource reference shape" ;
+    sh:targetClass aid-pais:ResourceReference ;
+    sh:property [
+        sh:path aid-pais:resourceKind ;
+        sh:minCount 1 ; sh:maxCount 1 ;
+        sh:in ( "trial_registration" "review_registration" "preregistration" "code_repository"
+                "data_repository" "data_accession" "cohort_or_dataset" "classification_code" ) ;
+        sh:severity sh:Violation ;
+        sh:message "A ResourceReference has one resourceKind from the closed list." ;
+    ] ;
+    sh:property [
+        sh:path aid-pais:resourceScheme ;
+        sh:minCount 1 ; sh:maxCount 1 ;
+        sh:severity sh:Violation ;
+        sh:message "A ResourceReference has exactly one resourceScheme." ;
+    ] ;
+    sh:property [
+        sh:path aid-pais:resourceId ;
+        sh:minCount 1 ; sh:maxCount 1 ;
+        sh:severity sh:Violation ;
+        sh:message "A ResourceReference has exactly one resourceId." ;
+    ] .
+
+mecfssh:CitationContextShape a sh:NodeShape ;
+    rdfs:label "Citation context shape" ;
+    sh:targetClass aid-pais:CitationContext ;
+    sh:property [
+        sh:path aid-pais:contextText ;
+        sh:minCount 1 ; sh:maxCount 1 ;
+        sh:datatype xsd:string ;
+        sh:severity sh:Violation ;
+        sh:message "A CitationContext has exactly one contextText." ;
+    ] ;
+    sh:property [
+        sh:path aid-pais:citingPaper ;
+        sh:minCount 1 ; sh:maxCount 1 ;
+        sh:nodeKind sh:IRI ;
+        sh:class aid-pais:DocumentMetadata ;
+        sh:severity sh:Violation ;
+        sh:message "A CitationContext names exactly one citing paper." ;
+    ] ;
+    sh:property [
+        sh:path aid-pais:citedPaper ;
+        sh:minCount 1 ; sh:maxCount 1 ;
+        sh:nodeKind sh:IRI ;
+        sh:class aid-pais:DocumentMetadata ;
+        sh:severity sh:Violation ;
+        sh:message "A CitationContext names exactly one cited paper." ;
+    ] .
+
+mecfssh:TextMinedTermShape a sh:NodeShape ;
+    rdfs:label "Text-mined term shape" ;
+    sh:targetClass aid-pais:TextMinedTerm ;
+    sh:property [
+        sh:path rdfs:label ;
+        sh:minCount 1 ; sh:maxCount 1 ;
+        sh:severity sh:Violation ;
+        sh:message "A TextMinedTerm has exactly one rdfs:label." ;
+    ] ;
+    sh:property [
+        sh:path aid-pais:termType ;
+        sh:minCount 1 ; sh:maxCount 1 ;
+        sh:severity sh:Violation ;
+        sh:message "A TextMinedTerm has exactly one termType." ;
+    ] .
+
+mecfssh:TermOccurrenceShape a sh:NodeShape ;
+    rdfs:label "Term occurrence shape" ;
+    sh:targetClass aid-pais:TermOccurrence ;
+    sh:property [
+        sh:path aid-pais:ofTerm ;
+        sh:minCount 1 ; sh:maxCount 1 ;
+        sh:class aid-pais:TextMinedTerm ;
+        sh:severity sh:Violation ;
+        sh:message "A TermOccurrence names exactly one TextMinedTerm." ;
+    ] ;
+    sh:property [
+        sh:path aid-pais:occurrenceCount ;
+        sh:minCount 1 ; sh:maxCount 1 ;
+        sh:datatype xsd:integer ;
+        sh:minInclusive 1 ;
+        sh:severity sh:Violation ;
+        sh:message "A TermOccurrence has one positive occurrenceCount." ;
+    ] .
+
+mecfssh:JournalExtrasShape a sh:NodeShape ;
+    rdfs:label "Journal properties from the record" ;
+    sh:targetClass aid-pais:Journal ;
+    sh:property [ sh:path schema:issn ; sh:maxCount 1 ; sh:severity sh:Violation ; sh:message "A Journal has at most one ISSN here." ] ;
+    sh:property [ sh:path aid-pais:essn ; sh:maxCount 1 ; sh:severity sh:Violation ; sh:message "A Journal has at most one electronic ISSN." ] ;
+    sh:property [ sh:path aid-pais:nlmId ; sh:maxCount 1 ; sh:severity sh:Violation ; sh:message "A Journal has at most one NLM id." ] ;
+    sh:property [ sh:path schema:publisher ; sh:maxCount 1 ; sh:severity sh:Violation ; sh:message "A Journal has at most one publisher here." ] ;
+    sh:property [ sh:path aid-pais:isInDoaj ; sh:maxCount 1 ; sh:datatype xsd:boolean ; sh:severity sh:Violation ; sh:message "isInDoaj is one boolean." ] .

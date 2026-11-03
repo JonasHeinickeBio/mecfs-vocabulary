@@ -1,0 +1,354 @@
+# SHACL shapes for the observation layer of the ME/CFS literature knowledge graph.
+#
+# Targets the RDF produced by ``mecfs_kg.orchestration.stages.assembly`` (the
+# ``AssemblyStage``), which turns ``ObservationAssembler`` output into
+# ``aid-pais:Observation`` / ``aid-pais:EntityMention`` nodes.
+# Validate a run's KG with:  mecfs kg validate runs/<id>
+#
+# These shapes describe the vocabulary the *code* emits, which used to diverge
+# from the LinkML schema in one place, now resolved, and still diverges in
+# another:
+#
+#   1. evidence.yaml gives hasSpecimen/hasAssay/hasTissue/hasCohort object
+#      ranges (Specimen/Assay/Tissue/Cohort classes). orchestration/stages/
+#      assembly.py used to emit plain string literals for all four instead;
+#      it now mints an entity IRI for each (typed and labeled via the same
+#      entity_registry path as hasSubject/hasObject), so the shapes below
+#      assert ``sh:nodeKind sh:IRI`` to match.
+#   2. ``aid-pais:EntityMention`` is emitted by assembly.py (an extraction
+#      whose predicate is "mentions" is typed as a bare mention rather than a
+#      measured finding). It is now also declared in the hand-maintained
+#      ontology (aid-pais-evidence.ttl) and in evidence.yaml -- this shape
+#      predates both and was, for a time, its only written-down contract; it
+#      stays as the structural (cardinality/nodeKind) validation of real
+#      output.
+#
+# schema.org namespace split (deliberate, do not "fix"): rdflib's ``SDO``
+# resolves to HTTPS, so most schema.org terms in this project are
+# ``https://schema.org/...``. The observation confidence node is the
+# exception -- orchestration/stages/assembly.py hardcodes
+# ``http://schema.org/aggregateRating`` and ``http://schema.org/ratingValue``
+# (HTTP). Both namespaces really do coexist in the emitted graphs, so the
+# shapes below use the ``schemahttp:`` prefix for the confidence node and the
+# ``schema:`` prefix everywhere else.
+
+@prefix sh:         <http://www.w3.org/ns/shacl#> .
+@prefix xsd:        <http://www.w3.org/2001/XMLSchema#> .
+@prefix rdf:        <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs:       <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix prov:       <http://www.w3.org/ns/prov#> .
+@prefix aid-pais:   <https://w3id.org/mecfs/kg/> .
+@prefix schema:     <https://schema.org/> .
+@prefix schemahttp: <http://schema.org/> .
+@prefix mecfssh:    <https://w3id.org/mecfs/kg/shapes/> .
+
+
+#############################################################################
+# aid-pais:Observation -- a measured finding
+#############################################################################
+
+mecfssh:ObservationShape a sh:NodeShape ;
+    rdfs:label "Observation shape" ;
+    rdfs:comment "Structural contract for aid-pais:Observation, the evidence-centric node at the heart of the KG: what was measured (subject/predicate/object), how it changed (direction/magnitude/significance), in what context (specimen/assay/section/tissue/cohort), on what evidence, and from which paper. Every constraint here holds in current real run output; breaches mean the graph is structurally broken." ;
+    sh:targetClass aid-pais:Observation ;
+
+    # --- what was measured -------------------------------------------------
+    sh:property [
+        sh:path aid-pais:hasSubject ;
+        sh:minCount 1 ;
+        sh:maxCount 1 ;
+        sh:nodeKind sh:IRI ;
+        sh:severity sh:Violation ;
+        sh:message "Observation must have exactly one aid-pais:hasSubject and it must be an entity IRI. An observation with no subject records nothing and cannot be queried." ;
+    ] ;
+    sh:property [
+        sh:path aid-pais:hasPredicate ;
+        sh:minCount 1 ;
+        sh:maxCount 1 ;
+        sh:datatype xsd:string ;
+        sh:minLength 1 ;
+        sh:severity sh:Violation ;
+        sh:message "Observation must have exactly one non-empty aid-pais:hasPredicate string (the relation verb, e.g. 'associated_with', 'mentions')." ;
+    ] ;
+    sh:property [
+        sh:path aid-pais:hasObject ;
+        sh:maxCount 1 ;
+        sh:nodeKind sh:IRI ;
+        sh:severity sh:Violation ;
+        sh:message "aid-pais:hasObject, when present, must be a single entity IRI. It is absent by design on observations whose predicate is 'mentions'." ;
+    ] ;
+
+    # --- how it changed ----------------------------------------------------
+    # The four permissible values are EffectDirection in
+    # schemas/linkml/evidence/evidence.yaml; pipelines/extraction/relations.py
+    # produces increase/decrease/no_change, "unclear" covers a detected but
+    # unresolved direction. Note they are bare stems -- NOT "increased" /
+    # "decreased".
+    sh:property [
+        sh:path aid-pais:hasDirection ;
+        sh:maxCount 1 ;
+        sh:datatype xsd:string ;
+        sh:in ( "increase" "decrease" "no_change" "unclear" ) ;
+        sh:severity sh:Violation ;
+        sh:message "aid-pais:hasDirection must be one of the four EffectDirection values: 'increase', 'decrease', 'no_change', 'unclear'. Anything else (e.g. 'increased', 'up', 'higher') is an extraction bug, not a new vocabulary." ;
+    ] ;
+    sh:property [
+        sh:path aid-pais:hasMagnitude ;
+        sh:maxCount 1 ;
+        sh:nodeKind sh:Literal ;
+        sh:or ( [ sh:datatype xsd:double ] [ sh:datatype xsd:decimal ] [ sh:datatype xsd:integer ] ) ;
+        sh:severity sh:Violation ;
+        sh:message "aid-pais:hasMagnitude must be a single numeric literal (the effect size). Observation.magnitude is typed float in models/article.py, so rdflib emits xsd:double." ;
+    ] ;
+    sh:property [
+        sh:path aid-pais:hasStatisticalSignificance ;
+        sh:maxCount 1 ;
+        sh:nodeKind sh:Literal ;
+        sh:or ( [ sh:datatype xsd:double ] [ sh:datatype xsd:decimal ] [ sh:datatype xsd:integer ] ) ;
+        sh:severity sh:Violation ;
+        sh:message "aid-pais:hasStatisticalSignificance must be a single numeric literal (a p-value)." ;
+    ] ;
+    sh:property [
+        sh:path aid-pais:hasStatisticalSignificance ;
+        sh:minInclusive 0 ;
+        sh:maxInclusive 1 ;
+        sh:severity sh:Warning ;
+        sh:message "aid-pais:hasStatisticalSignificance is outside [0, 1]; it is meant to hold a p-value. Check whether the extractor put a test statistic or an effect size here." ;
+    ] ;
+
+    # --- context -----------------------------------------------------------
+    # Section is always present: orchestration/stages/assembly.py defaults it
+    # to "uncategorized" (lines 201 / 238).
+    sh:property [
+        sh:path aid-pais:hasSection ;
+        sh:minCount 1 ;
+        sh:maxCount 1 ;
+        sh:datatype xsd:string ;
+        sh:minLength 1 ;
+        sh:severity sh:Violation ;
+        sh:message "Observation must record exactly one non-empty aid-pais:hasSection. The assembly stage defaults it to 'uncategorized', so a missing section means the node was not built by AssemblyStage." ;
+    ] ;
+    sh:property [
+        sh:path aid-pais:hasSpecimen ;
+        sh:maxCount 1 ;
+        sh:nodeKind sh:IRI ;
+        sh:severity sh:Violation ;
+        sh:message "aid-pais:hasSpecimen, when present, must be a single Specimen entity IRI, matching evidence.yaml's declared object range." ;
+    ] ;
+    sh:property [
+        sh:path aid-pais:hasAssay ;
+        sh:maxCount 1 ;
+        sh:nodeKind sh:IRI ;
+        sh:severity sh:Violation ;
+        sh:message "aid-pais:hasAssay, when present, must be a single Assay entity IRI, matching evidence.yaml's declared object range." ;
+    ] ;
+    # hasTissue / hasCohort are schema-ready but populated by no current
+    # extraction stage -- maxCount only, never minCount.
+    sh:property [
+        sh:path aid-pais:hasTissue ;
+        sh:maxCount 1 ;
+        sh:nodeKind sh:IRI ;
+        sh:severity sh:Violation ;
+        sh:message "aid-pais:hasTissue, when present, must be a single Tissue entity IRI. It is schema-ready but not yet populated by any extraction stage, so it is never required." ;
+    ] ;
+    sh:property [
+        sh:path aid-pais:hasCohort ;
+        sh:maxCount 1 ;
+        sh:nodeKind sh:IRI ;
+        sh:severity sh:Violation ;
+        sh:message "aid-pais:hasCohort, when present, must be a single Cohort entity IRI. It is schema-ready but not yet populated by any extraction stage, so it is never required." ;
+    ] ;
+
+    # --- evidence and provenance ------------------------------------------
+    # No maxCount on hasEvidence: one observation may merge several
+    # supporting extractions.
+    sh:property [
+        sh:path aid-pais:hasEvidence ;
+        sh:minCount 1 ;
+        sh:nodeKind sh:IRI ;
+        sh:severity sh:Violation ;
+        sh:message "Observation must link to at least one aid-pais:Evidence IRI via aid-pais:hasEvidence. An observation with no evidence is an unsourced claim." ;
+    ] ;
+    sh:property [
+        sh:path prov:wasGeneratedBy ;
+        sh:minCount 1 ;
+        sh:maxCount 1 ;
+        sh:nodeKind sh:IRI ;
+        sh:severity sh:Violation ;
+        sh:message "Observation must record exactly one prov:wasGeneratedBy pointing at the source paper IRI. (Note: on aid-pais:DocumentMetadata the same predicate carries a plain literal pipeline name instead, so nodeKind is constrained per shape, never globally.)" ;
+    ] ;
+    sh:property [
+        sh:path schemahttp:aggregateRating ;
+        sh:minCount 1 ;
+        sh:maxCount 1 ;
+        sh:nodeKind sh:BlankNode ;
+        sh:severity sh:Violation ;
+        sh:message "Observation must carry exactly one http://schema.org/aggregateRating blank node holding the ensemble confidence. Note the HTTP namespace: assembly.py hardcodes it, while the document-metadata builder uses HTTPS schema.org." ;
+    ] .
+
+
+# A measured finding should say something beyond 'this entity was mentioned'.
+# Reported once per node (a node-level sh:or), not once per missing predicate.
+mecfssh:ObservationFindingContentShape a sh:NodeShape ;
+    rdfs:label "Observation carries a finding" ;
+    rdfs:comment "An aid-pais:Observation is supposed to record a measured finding, so it should have an object, a direction or a magnitude. Bare mentions are typed aid-pais:EntityMention by assembly.py instead. Warning, not Violation: runs produced before that split typed every mention as an Observation, and those graphs are still on disk." ;
+    sh:targetClass aid-pais:Observation ;
+    sh:severity sh:Warning ;
+    sh:message "Observation records no finding: it has no aid-pais:hasObject, no aid-pais:hasDirection and no aid-pais:hasMagnitude, so it is a bare entity mention typed as a measured observation. Newer runs type these as aid-pais:EntityMention." ;
+    sh:or (
+        [ sh:property [ sh:path aid-pais:hasObject    ; sh:minCount 1 ] ]
+        [ sh:property [ sh:path aid-pais:hasDirection ; sh:minCount 1 ] ]
+        [ sh:property [ sh:path aid-pais:hasMagnitude ; sh:minCount 1 ] ]
+    ) .
+
+
+#############################################################################
+# aid-pais:EntityMention -- a bare mention, not a measured finding
+#############################################################################
+
+mecfssh:EntityMentionShape a sh:NodeShape ;
+    rdfs:label "Entity mention shape" ;
+    rdfs:comment "Structural contract for aid-pais:EntityMention -- emitted by orchestration/stages/assembly.py when an extraction's predicate is 'mentions'. It is the most common node type in real output yet is declared in no ontology module and no LinkML schema, so this shape is currently its only written-down definition. Exactly seven predicates are emitted: rdf:type, hasSubject, hasPredicate, hasSection, hasEvidence, http://schema.org/aggregateRating and prov:wasGeneratedBy -- notably no hasObject and no hasDirection." ;
+    sh:targetClass aid-pais:EntityMention ;
+
+    sh:property [
+        sh:path aid-pais:hasSubject ;
+        sh:minCount 1 ;
+        sh:maxCount 1 ;
+        sh:nodeKind sh:IRI ;
+        sh:severity sh:Violation ;
+        sh:message "EntityMention must have exactly one aid-pais:hasSubject entity IRI -- the thing that was mentioned. Without it the node carries no information at all." ;
+    ] ;
+    sh:property [
+        sh:path aid-pais:hasPredicate ;
+        sh:minCount 1 ;
+        sh:maxCount 1 ;
+        sh:datatype xsd:string ;
+        sh:hasValue "mentions" ;
+        sh:severity sh:Violation ;
+        sh:message "EntityMention must have exactly one aid-pais:hasPredicate with the value 'mentions'. Anything else is a measured finding and must be typed aid-pais:Observation instead." ;
+    ] ;
+    sh:property [
+        sh:path aid-pais:hasSection ;
+        sh:minCount 1 ;
+        sh:maxCount 1 ;
+        sh:datatype xsd:string ;
+        sh:minLength 1 ;
+        sh:severity sh:Violation ;
+        sh:message "EntityMention must record exactly one non-empty aid-pais:hasSection (the assembly stage defaults it to 'uncategorized')." ;
+    ] ;
+    sh:property [
+        sh:path aid-pais:hasEvidence ;
+        sh:minCount 1 ;
+        sh:nodeKind sh:IRI ;
+        sh:severity sh:Violation ;
+        sh:message "EntityMention must link to at least one aid-pais:Evidence IRI via aid-pais:hasEvidence -- the sentence the mention was anchored in." ;
+    ] ;
+    sh:property [
+        sh:path prov:wasGeneratedBy ;
+        sh:minCount 1 ;
+        sh:maxCount 1 ;
+        sh:nodeKind sh:IRI ;
+        sh:severity sh:Violation ;
+        sh:message "EntityMention must record exactly one prov:wasGeneratedBy pointing at the source paper IRI." ;
+    ] ;
+    sh:property [
+        sh:path schemahttp:aggregateRating ;
+        sh:minCount 1 ;
+        sh:maxCount 1 ;
+        sh:nodeKind sh:BlankNode ;
+        sh:severity sh:Violation ;
+        sh:message "EntityMention must carry exactly one http://schema.org/aggregateRating blank node holding the ensemble confidence (HTTP namespace -- see the header comment)." ;
+    ] ;
+
+    # A mention has no object and no direction, by construction.
+    sh:property [
+        sh:path aid-pais:hasObject ;
+        sh:maxCount 0 ;
+        sh:severity sh:Violation ;
+        sh:message "EntityMention must not carry aid-pais:hasObject. A node with an object is a subject-predicate-object finding and belongs under aid-pais:Observation." ;
+    ] ;
+    sh:property [
+        sh:path aid-pais:hasDirection ;
+        sh:maxCount 0 ;
+        sh:severity sh:Violation ;
+        sh:message "EntityMention must not carry aid-pais:hasDirection. A node with a direction is a measured finding and belongs under aid-pais:Observation." ;
+    ] .
+
+
+#############################################################################
+# Shared shapes for values reached from observations and mentions
+#############################################################################
+
+# The ensemble-confidence blank node hanging off http://schema.org/aggregateRating.
+mecfssh:ConfidenceRatingShape a sh:NodeShape ;
+    rdfs:label "Ensemble confidence rating" ;
+    rdfs:comment "The blank node that carries an Observation's / EntityMention's ensemble confidence. Confidence is computed as vote_frac * 0.6 + avg_score * 0.4 (pipelines/extraction/ensemble.py), so it is bounded to [0, 1]." ;
+    sh:targetObjectsOf schemahttp:aggregateRating ;
+    sh:property [
+        sh:path schemahttp:ratingValue ;
+        sh:minCount 1 ;
+        sh:maxCount 1 ;
+        sh:datatype xsd:double ;
+        sh:minInclusive 0 ;
+        sh:maxInclusive 1 ;
+        sh:severity sh:Violation ;
+        sh:message "The aggregateRating node must carry exactly one http://schema.org/ratingValue xsd:double in [0, 1] -- the ensemble confidence for this observation." ;
+    ] .
+
+
+# Entity IRIs referenced as observation subjects / objects.
+mecfssh:ObservationSubjectShape a sh:NodeShape ;
+    rdfs:label "Observation subject is described" ;
+    rdfs:comment "Every IRI used as an aid-pais:hasSubject must itself be described in the graph: an rdf:type (the mapped aid-pais class, falling back to aid-pais:Entity) and a non-empty rdfs:label carrying the surface form or CURIE. The assembly stage now emits an entity node for every subject and object it references, so this is enforced as a Violation -- a dangling subject means the observation layer wrote a reference it never backed with a node." ;
+    sh:targetObjectsOf aid-pais:hasSubject ;
+    sh:property [
+        sh:path rdf:type ;
+        sh:minCount 1 ;
+        sh:severity sh:Violation ;
+        sh:message "Observation subject IRI is a dangling reference: the graph contains no rdf:type for it, so nothing can say what the observation is about without parsing the IRI string." ;
+    ] ;
+    sh:property [
+        sh:path rdfs:label ;
+        sh:minCount 1 ;
+        sh:minLength 1 ;
+        sh:severity sh:Violation ;
+        sh:message "Observation subject entity has no non-empty rdfs:label; the assembly stage writes the surface form (falling back to the CURIE) on every entity node." ;
+    ] .
+
+mecfssh:ObservationObjectShape a sh:NodeShape ;
+    rdfs:label "Observation object is described" ;
+    rdfs:comment "Mirror of mecfssh:ObservationSubjectShape for aid-pais:hasObject. Fires only on relation-derived observations, since a bare EntityMention carries no object." ;
+    sh:targetObjectsOf aid-pais:hasObject ;
+    sh:property [
+        sh:path rdf:type ;
+        sh:minCount 1 ;
+        sh:severity sh:Violation ;
+        sh:message "Observation object IRI is a dangling reference: the graph contains no rdf:type for it." ;
+    ] ;
+    sh:property [
+        sh:path rdfs:label ;
+        sh:minCount 1 ;
+        sh:minLength 1 ;
+        sh:severity sh:Violation ;
+        sh:message "Observation object entity has no non-empty rdfs:label." ;
+    ] .
+
+
+# Inherited intent from the deleted validation/shacl/measurement.shacl.ttl.
+#
+# That orphaned file required :hasValue, :hasUnit and :hasTimepoint on every
+# :Observation. None of the three is emitted by any part of this pipeline, so
+# as written it failed 100% of real data (and it was never loaded: the engine
+# reads validation/shapes/, not validation/shacl/). The one part of it worth
+# keeping is the *range* rule -- if a unit IRI ever shows up it should come
+# from the Unit Ontology. Kept vacuous and advisory rather than resurrected as
+# a requirement.
+mecfssh:MeasurementUnitShape a sh:NodeShape ;
+    rdfs:label "Measurement unit namespace" ;
+    rdfs:comment "Advisory range check inherited from the deleted validation/shacl/measurement.shacl.ttl. No emitter produces aid-pais:hasUnit today, so this shape is vacuous; it exists so the convention survives until measurement modelling lands." ;
+    sh:targetObjectsOf aid-pais:hasUnit ;
+    sh:nodeKind sh:IRI ;
+    sh:pattern "^http://purl\\.obolibrary\\.org/obo/UO_" ;
+    sh:severity sh:Info ;
+    sh:message "Measurement units should be Unit Ontology IRIs (http://purl.obolibrary.org/obo/UO_...). Nothing emits aid-pais:hasUnit yet, so seeing this means a new emitter has appeared." .

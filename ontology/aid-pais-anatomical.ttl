@@ -1,0 +1,46 @@
+@prefix : <https://w3id.org/mecfs/kg/> .
+@prefix owl: <http://www.w3.org/2002/07/owl#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix dc: <http://purl.org/dc/elements/1.1/> .
+@prefix IAO: <http://purl.obolibrary.org/obo/IAO_> .
+@prefix CLAO: <http://purl.obolibrary.org/obo/CLAO_> .
+@prefix NCIT: <http://purl.obolibrary.org/obo/NCIT_> .
+@prefix UBERON: <http://purl.obolibrary.org/obo/UBERON_> .
+@prefix EFO: <http://www.ebi.ac.uk/efo/> .
+@prefix skos: <http://www.w3.org/2004/02/skos/core#> .
+
+<https://w3id.org/mecfs/ontology/anatomical> a owl:Ontology ;
+  owl:imports <https://w3id.org/mecfs/ontology/core> ,
+              <http://purl.obolibrary.org/obo/ncit.owl> ,
+              <http://purl.obolibrary.org/obo/clao.owl> ,
+              <http://purl.obolibrary.org/obo/uberon.owl> ,
+              <http://www.ebi.ac.uk/efo/efo.owl> ;
+  owl:versionIRI <https://w3id.org/mecfs/ontology/anatomical/2025-09-22> ;
+  dc:title "AID-PAIS Anatomical Ontology" ;
+  dc:description "Anatomical module for AID-PAIS ontology, covering anatomical structures and cellular components." .
+
+:AnatomicalEntity a owl:Class ; rdfs:subClassOf :Entity ; rdfs:label "Anatomical Entity" ; IAO:0000115 "A structural part of an organism, such as an organ, tissue, or cell." ; owl:equivalentClass CLAO:0001117 .
+:OrganSystem a owl:Class ; rdfs:subClassOf :AnatomicalEntity ; rdfs:label "Organ System" ; IAO:0000115 "A group of organs that work together to perform a specific function." ; owl:equivalentClass NCIT:C12919 ; skos:exactMatch UBERON:0000467 .
+:Organ a owl:Class ; rdfs:subClassOf :AnatomicalEntity ; rdfs:label "Organ" ; IAO:0000115 "A distinct anatomical structure composed of tissues that performs a specific function within an organism." ; owl:equivalentClass UBERON:0000062 .
+:Tissue a owl:Class ; rdfs:subClassOf :AnatomicalEntity ; rdfs:label "Tissue" ; IAO:0000115 "A group of cells with a similar structure and function." ; owl:equivalentClass CLAO:0001147 ; skos:exactMatch UBERON:0000479 .
+:CellType a owl:Class ; rdfs:subClassOf :AnatomicalEntity ; rdfs:label "Cell Type" ; IAO:0000115 "A category of cells distinguished by their structure and function." ; owl:equivalentClass EFO:EFO_0000324 .
+:CellularComponent a owl:Class ; rdfs:subClassOf :Entity ; rdfs:label "Cellular Component" ; IAO:0000115 "A part of a cell, such as the nucleus or mitochondrion." ; owl:equivalentClass CLAO:0001187 .
+
+# -----------------------------------------------------
+# Anatomical relations
+# Placing location relations here for users exploring anatomical entities
+# -----------------------------------------------------
+
+:locatedIn a owl:ObjectProperty ;
+  rdfs:label "located in" ;
+  rdfs:domain :Entity ;
+  rdfs:range :AnatomicalEntity ;
+  IAO:0000115 "Indicates the location of an entity." ;
+  owl:inverseOf :contains .
+
+:contains a owl:ObjectProperty ;
+  rdfs:label "contains" ;
+  rdfs:domain :AnatomicalEntity ;
+  rdfs:range :Entity ;
+  IAO:0000115 "Inverse of located in: relates a location to the entity located in it." ;
+  owl:inverseOf :locatedIn .

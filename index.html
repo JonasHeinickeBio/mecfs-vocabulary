@@ -1,0 +1,1191 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <title>MECFS knowledge graph vocabulary</title>
+  <style>
+    code{white-space: pre-wrap;}
+    span.smallcaps{font-variant: small-caps;}
+    div.columns{display: flex; gap: min(4vw, 1.5em);}
+    div.column{flex: auto; overflow-x: auto;}
+    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+    /* The extra [class] is a hack that increases specificity enough to
+       override a similar rule in reveal.js */
+    ul.task-list[class]{list-style: none;}
+    ul.task-list li input[type="checkbox"] {
+      font-size: inherit;
+      width: 0.8em;
+      margin: 0 0.8em 0.2em -1.6em;
+      vertical-align: middle;
+    }
+    .display.math{display: block; text-align: center; margin: 0.5rem auto;}
+  </style>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+<header id="title-block-header">
+<h1 class="title">MECFS knowledge graph vocabulary</h1>
+</header>
+<h1 id="the-document-graphs-vocabulary">The document graph's
+vocabulary</h1>
+<p>Generated from
+<code>src/mecfs_kg/schemas/document_graph_vocabulary.py</code> by
+<code>python -m mecfs_kg.schemas.generate_document_graph</code>; do not
+edit by hand. The same module renders the OWL declarations
+(<code>aid-pais-bibliometrics.ttl</code>) and the LinkML attributes
+(<code>aid-pais-document-metadata.yaml</code>,
+<code>evidence.yaml</code>);
+<code>tests/unit/test_vocabulary_parity_unit.py</code> fails if any of
+the three differs from what the graph writes. Design and numbers:
+DOCUMENT_METADATA_KG.md.</p>
+<p>Namespace <code>aid-pais:</code> =
+<code>https://w3id.org/mecfs/kg/</code>. A property with another prefix
+is a standard vocabulary term the graph reuses.</p>
+<h2 id="classes">Classes</h2>
+<table>
+<thead>
+<tr>
+<th>Class</th>
+<th>What it is</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>aid-pais:Authorship</code></td>
+<td>One person's position on one paper, with institutions and
+affiliation text.</td>
+</tr>
+<tr>
+<td><code>aid-pais:MeshHeading</code></td>
+<td>A MeSH descriptor assigned to a paper, shared by every paper that
+carries it.</td>
+</tr>
+<tr>
+<td><code>aid-pais:Topic</code></td>
+<td>An OpenAlex topic assigned to a paper.</td>
+</tr>
+<tr>
+<td><code>aid-pais:Grant</code></td>
+<td>A funding award, shared by every paper that acknowledges it.</td>
+</tr>
+<tr>
+<td><code>aid-pais:Funder</code></td>
+<td>A funding agency, one node per name folded for case and
+punctuation.</td>
+</tr>
+<tr>
+<td><code>aid-pais:Keyword</code></td>
+<td>An author keyword, lower-cased and shared by every paper that uses
+it (labelled with the corpus's most common spelling).</td>
+</tr>
+<tr>
+<td><code>aid-pais:DocumentSection</code></td>
+<td>One section of a paper's parsed full text, described but not quoted:
+heading, path, kind and sizes. The text is kept in a side store.</td>
+</tr>
+<tr>
+<td><code>aid-pais:DocumentTable</code></td>
+<td>One table of a paper's full text: caption, shape and column headers.
+The cell grid is kept in a side store.</td>
+</tr>
+<tr>
+<td><code>aid-pais:ResourceReference</code></td>
+<td>A trial or review registration, code or data repository, accession
+number, named cohort or classification code a paper's text names.</td>
+</tr>
+<tr>
+<td><code>aid-pais:ExternalWork</code></td>
+<td>A work a paper cites that is not a paper of the corpus: DOI and/or
+PMID and year only.</td>
+</tr>
+<tr>
+<td><code>aid-pais:CitationContext</code></td>
+<td>The sentence around an in-text citation of a corpus paper, with the
+section it sits in.</td>
+</tr>
+<tr>
+<td><code>aid-pais:RecordRelation</code></td>
+<td>A Europe PMC link between records: preprint and article, erratum,
+retraction, expression of concern, comment, update, version.</td>
+</tr>
+<tr>
+<td><code>aid-pais:IdentityLink</code></td>
+<td>Why two records of the corpus are linked as the same study or as
+possibly the same paper: the kind of link and the reason.</td>
+</tr>
+<tr>
+<td><code>aid-pais:Substance</code></td>
+<td>A chemical substance a paper is indexed with (MeSH substance or
+supplementary concept), with its CAS/EC registry number when it has
+one.</td>
+</tr>
+<tr>
+<td><code>aid-pais:DiscoverySource</code></td>
+<td>A place papers are discovered: Europe PMC, PubMed, OpenAlex or
+Semantic Scholar.</td>
+</tr>
+<tr>
+<td><code>aid-pais:SourceHit</code></td>
+<td>One discovery source's record of a paper: the source, the id it uses
+for the paper, and the kind of record it returned.</td>
+</tr>
+<tr>
+<td><code>aid-pais:FullTextLink</code></td>
+<td>A place Europe PMC lists where a paper's full text can be read, with
+its document style and access.</td>
+</tr>
+<tr>
+<td><code>aid-pais:OpenAccessLocation</code></td>
+<td>A copy of a paper Unpaywall found: publisher or repository, with
+version, licence.</td>
+</tr>
+<tr>
+<td><code>aid-pais:TextMinedTerm</code></td>
+<td>A concept Europe PMC / PubTator3 text mining found in a paper
+(disease, gene, chemical, organism, symptom, ...), shared across
+papers.</td>
+</tr>
+<tr>
+<td><code>aid-pais:TermOccurrence</code></td>
+<td>How often, and in which sections, one paper mentions a text-mined
+term; written for terms mentioned often enough to matter.</td>
+</tr>
+</tbody>
+</table>
+<h2 id="properties-of-documentmetadata">Properties of
+<code>DocumentMetadata</code></h2>
+<table>
+<thead>
+<tr>
+<th>Property</th>
+<th>Range</th>
+<th></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>aid-pais:corpusUid</code></td>
+<td>xsd:string</td>
+<td>The sticky corpus identifier (aidpais:<hash>) the paper IRI is
+minted from; it does not change when a DOI or PMCID arrives later.</td>
+</tr>
+<tr>
+<td><code>aid-pais:sourceDatabase</code></td>
+<td>xsd:string</td>
+<td>Europe PMC source code of the record: MED, PMC, PPR (preprint), PAT
+(patent), ETH, ...</td>
+</tr>
+<tr>
+<td><code>aid-pais:recordKind</code></td>
+<td>xsd:string</td>
+<td>journal_article, review, systematic_review, randomized_trial,
+case_report, editorial, notice (erratum, retraction), preprint, patent,
+thesis or other.</td>
+</tr>
+<tr>
+<td><code>aid-pais:relevance</code></td>
+<td>xsd:string</td>
+<td>Where the ME/CFS or Long COVID terms occur in the paper's metadata:
+title, abstract, index_term or none.</td>
+</tr>
+<tr>
+<td><code>aid-pais:diseaseFocus</code></td>
+<td>xsd:string</td>
+<td>me_cfs, long_covid or both, judged from title and abstract.</td>
+</tr>
+<tr>
+<td><code>aid-pais:licenseClass</code></td>
+<td>xsd:string</td>
+<td>open, share_alike, non_commercial, no_derivatives,
+non_commercial_no_derivatives, other or unlicensed.</td>
+</tr>
+<tr>
+<td><code>aid-pais:fullTextRoute</code></td>
+<td>xsd:string</td>
+<td>pmc (PMCID and free to read), publisher (free to read, no PMCID) or
+none.</td>
+</tr>
+<tr>
+<td><code>aid-pais:possibleDuplicateOf</code></td>
+<td>DocumentMetadata</td>
+<td>Links a paper to the paper with the smallest UID among those sharing
+its folded title (preprint and article, patent family). A hint, not an
+identity claim.</td>
+</tr>
+<tr>
+<td><code>aid-pais:hasAuthorship</code></td>
+<td>Authorship, repeatable</td>
+<td>The paper's authorships, one per author in author-list order.</td>
+</tr>
+<tr>
+<td><code>dcterms:subject</code></td>
+<td>MeshHeading, repeatable</td>
+<td>The MeSH headings assigned to the paper.</td>
+</tr>
+<tr>
+<td><code>schema:about</code></td>
+<td>Topic, repeatable</td>
+<td>The OpenAlex topics assigned to the paper.</td>
+</tr>
+<tr>
+<td><code>schema:funding</code></td>
+<td>Grant, repeatable</td>
+<td>The grants the paper acknowledges (Europe PMC, and the paper's own
+funding group).</td>
+</tr>
+<tr>
+<td><code>aid-pais:primaryTopic</code></td>
+<td>Topic</td>
+<td>The paper's highest-scoring OpenAlex topic.</td>
+</tr>
+<tr>
+<td><code>aid-pais:hasKeyword</code></td>
+<td>Keyword, repeatable</td>
+<td>An author keyword of the paper.</td>
+</tr>
+<tr>
+<td><code>schema:inLanguage</code></td>
+<td>xsd:string</td>
+<td>ISO 639-1 language code of the paper.</td>
+</tr>
+<tr>
+<td><code>aid-pais:publicationType</code></td>
+<td>xsd:string, repeatable</td>
+<td>Every publication type Europe PMC lists (Journal Article, Review,
+Randomized Controlled Trial, research-article, ...).</td>
+</tr>
+<tr>
+<td><code>aid-pais:publicationStatus</code></td>
+<td>xsd:string</td>
+<td>Europe PMC publication status: epublish, ppublish, aheadofprint,
+...</td>
+</tr>
+<tr>
+<td><code>aid-pais:publicationModel</code></td>
+<td>xsd:string</td>
+<td>Europe PMC publication model: Electronic, Print,
+Print-Electronic.</td>
+</tr>
+<tr>
+<td><code>dcterms:created</code></td>
+<td>xsd:date</td>
+<td>When Europe PMC created the record.</td>
+</tr>
+<tr>
+<td><code>dcterms:modified</code></td>
+<td>xsd:date</td>
+<td>When Europe PMC last revised the record.</td>
+</tr>
+<tr>
+<td><code>aid-pais:firstIndexedDate</code></td>
+<td>xsd:date</td>
+<td>When Europe PMC first indexed the record.</td>
+</tr>
+<tr>
+<td><code>aid-pais:fullTextReceivedDate</code></td>
+<td>xsd:date</td>
+<td>When Europe PMC received the full text.</td>
+</tr>
+<tr>
+<td><code>aid-pais:indexingCompletedDate</code></td>
+<td>xsd:date</td>
+<td>When indexing of the record was completed.</td>
+</tr>
+<tr>
+<td><code>aid-pais:electronicPublicationDate</code></td>
+<td>xsd:date</td>
+<td>Date of electronic publication.</td>
+</tr>
+<tr>
+<td><code>aid-pais:firstPublicationDate</code></td>
+<td>xsd:date</td>
+<td>Date of first publication in any form.</td>
+</tr>
+<tr>
+<td><code>aid-pais:embargoUntil</code></td>
+<td>xsd:date</td>
+<td>End of an embargo on the full text.</td>
+</tr>
+<tr>
+<td><code>aid-pais:licenseStartDate</code></td>
+<td>xsd:date</td>
+<td>When the licence Crossref lists took effect.</td>
+</tr>
+<tr>
+<td><code>aid-pais:hasSupplementaryMaterial</code></td>
+<td>xsd:boolean</td>
+<td>Europe PMC flags supplementary files.</td>
+</tr>
+<tr>
+<td><code>aid-pais:hasDataLinks</code></td>
+<td>xsd:boolean</td>
+<td>Europe PMC links the paper to supporting or related data.</td>
+</tr>
+<tr>
+<td><code>aid-pais:hasLabsLinks</code></td>
+<td>xsd:boolean</td>
+<td>Europe PMC Labs links exist for the paper.</td>
+</tr>
+<tr>
+<td><code>aid-pais:hasTextMinedTerms</code></td>
+<td>xsd:boolean</td>
+<td>Europe PMC has text-mined terms for the paper.</td>
+</tr>
+<tr>
+<td><code>aid-pais:hasDbCrossReferences</code></td>
+<td>xsd:boolean</td>
+<td>The paper cross-references molecular databases.</td>
+</tr>
+<tr>
+<td><code>aid-pais:hasReferenceList</code></td>
+<td>xsd:boolean</td>
+<td>Europe PMC holds the paper's reference list.</td>
+</tr>
+<tr>
+<td><code>aid-pais:hasBook</code></td>
+<td>xsd:boolean</td>
+<td>The record is linked to a book.</td>
+</tr>
+<tr>
+<td><code>aid-pais:hasEvaluations</code></td>
+<td>xsd:boolean</td>
+<td>The paper has post-publication evaluations.</td>
+</tr>
+<tr>
+<td><code>aid-pais:inEuropePmc</code></td>
+<td>xsd:boolean</td>
+<td>The record is in Europe PMC proper.</td>
+</tr>
+<tr>
+<td><code>aid-pais:inPmc</code></td>
+<td>xsd:boolean</td>
+<td>The paper is in PubMed Central.</td>
+</tr>
+<tr>
+<td><code>aid-pais:isAuthorManuscript</code></td>
+<td>xsd:boolean</td>
+<td>An author manuscript (NIH public access or Europe PMC funders).</td>
+</tr>
+<tr>
+<td><code>aid-pais:inMedline</code></td>
+<td>xsd:boolean</td>
+<td>The record carries a MEDLINE subset (Index Medicus).</td>
+</tr>
+<tr>
+<td><code>aid-pais:dataLinkTag</code></td>
+<td>xsd:string, repeatable</td>
+<td>A Europe PMC data-link tag: supporting_data, altmetrics,
+related_data, ...</td>
+</tr>
+<tr>
+<td><code>aid-pais:accessionType</code></td>
+<td>xsd:string, repeatable</td>
+<td>A kind of accession number text mining found in the paper: nct, gen,
+refsnp, pdb, geo, uniprot, ...</td>
+</tr>
+<tr>
+<td><code>aid-pais:medlineSubset</code></td>
+<td>xsd:string, repeatable</td>
+<td>A MEDLINE subset the record belongs to.</td>
+</tr>
+<tr>
+<td><code>aid-pais:investigator</code></td>
+<td>xsd:string, repeatable</td>
+<td>A collaborator or investigator group member listed on the
+record.</td>
+</tr>
+<tr>
+<td><code>aid-pais:integrityStatus</code></td>
+<td>xsd:string, repeatable</td>
+<td>retracted, retraction_notice, corrected, erratum_notice,
+expression_of_concern or expression_of_concern_notice, from the record's
+comment/correction links.</td>
+</tr>
+<tr>
+<td><code>aid-pais:openAlexReferenceCount</code></td>
+<td>xsd:integer</td>
+<td>References OpenAlex lists for the work (not only those inside the
+corpus).</td>
+</tr>
+<tr>
+<td><code>aid-pais:hasRecordRelation</code></td>
+<td>RecordRelation, repeatable</td>
+<td>A Europe PMC link from this record to another.</td>
+</tr>
+<tr>
+<td><code>aid-pais:hasPreprint</code></td>
+<td>DocumentMetadata</td>
+<td>This paper's preprint, when both are in the corpus.</td>
+</tr>
+<tr>
+<td><code>aid-pais:preprintOf</code></td>
+<td>DocumentMetadata</td>
+<td>The published paper this preprint became, when both are in the
+corpus.</td>
+</tr>
+<tr>
+<td><code>aid-pais:workKey</code></td>
+<td>xsd:string</td>
+<td>The same for a paper and its preprints and versions (one study);
+count distinct keys to count studies.</td>
+</tr>
+<tr>
+<td><code>aid-pais:fullTextMentions</code></td>
+<td>xsd:integer</td>
+<td>How often ME/CFS or Long COVID is named in the parsed body text;
+with relevance, tells a paper about the disease from one that mentions
+it in passing. Absent when no full text was parsed.</td>
+</tr>
+<tr>
+<td><code>aid-pais:workKind</code></td>
+<td>xsd:string</td>
+<td>article, preprint, repository (a Zenodo/OSF/figshare copy) or notice
+(correction, erratum, retraction), from what the sources report.</td>
+</tr>
+<tr>
+<td><code>aid-pais:hasVersion</code></td>
+<td>DocumentMetadata, repeatable</td>
+<td>Another version of this paper in the corpus: a repository copy, a
+versioned DOI (eLife .3, Cochrane pub9). Symmetric.</td>
+</tr>
+<tr>
+<td><code>aid-pais:possiblySameAs</code></td>
+<td>DocumentMetadata, repeatable</td>
+<td>A record that may be this paper but was not merged because a guard
+failed (year, first author, DOI); the IdentityLink says why.
+Symmetric.</td>
+</tr>
+<tr>
+<td><code>aid-pais:amends</code></td>
+<td>DocumentMetadata</td>
+<td>The paper of the corpus this correction, erratum or retraction
+notice concerns.</td>
+</tr>
+<tr>
+<td><code>aid-pais:amendedBy</code></td>
+<td>DocumentMetadata, repeatable</td>
+<td>A correction, erratum or retraction notice of the corpus that
+concerns this paper.</td>
+</tr>
+<tr>
+<td><code>aid-pais:hasIdentityLink</code></td>
+<td>IdentityLink, repeatable</td>
+<td>The reason this paper is linked to another record of the
+corpus.</td>
+</tr>
+<tr>
+<td><code>aid-pais:hasSubstance</code></td>
+<td>Substance, repeatable</td>
+<td>A chemical substance the paper is indexed with.</td>
+</tr>
+<tr>
+<td><code>aid-pais:hasSourceHit</code></td>
+<td>SourceHit, repeatable</td>
+<td>One search source's record of this paper (which source, under which
+id).</td>
+</tr>
+<tr>
+<td><code>aid-pais:foundBy</code></td>
+<td>DiscoverySource, repeatable</td>
+<td>A search source that listed this paper (Europe PMC, PubMed,
+OpenAlex, Semantic Scholar).</td>
+</tr>
+<tr>
+<td><code>aid-pais:hasFullTextLink</code></td>
+<td>FullTextLink, repeatable</td>
+<td>A place Europe PMC lists where the full text can be read.</td>
+</tr>
+<tr>
+<td><code>aid-pais:hasOpenAccessLocation</code></td>
+<td>OpenAccessLocation, repeatable</td>
+<td>A copy of the paper Unpaywall found.</td>
+</tr>
+<tr>
+<td><code>aid-pais:hasBestOpenAccessLocation</code></td>
+<td>OpenAccessLocation</td>
+<td>Unpaywall's preferred copy of this paper. An edge, not a flag on the
+location: a copy can be the best for one paper and not for another.
+Sub-property of <code>hasOpenAccessLocation</code>.</td>
+</tr>
+<tr>
+<td><code>aid-pais:cites</code></td>
+<td>DocumentMetadata, repeatable</td>
+<td>This paper cites that paper of the corpus (from its reference list,
+OpenAlex's, or both).</td>
+</tr>
+<tr>
+<td><code>aid-pais:citesViaReferenceList</code></td>
+<td>DocumentMetadata, repeatable</td>
+<td>Cites, as found in the paper's own parsed reference list.
+Sub-property of <code>cites</code>.</td>
+</tr>
+<tr>
+<td><code>aid-pais:citesViaOpenAlex</code></td>
+<td>DocumentMetadata, repeatable</td>
+<td>Cites, as OpenAlex lists the paper's references. Sub-property of
+<code>cites</code>.</td>
+</tr>
+<tr>
+<td><code>aid-pais:relatedWork</code></td>
+<td>DocumentMetadata, repeatable</td>
+<td>OpenAlex lists that paper as related, when both are in the
+corpus.</td>
+</tr>
+<tr>
+<td><code>aid-pais:citesExternal</code></td>
+<td>ExternalWork, repeatable</td>
+<td>A reference to a work outside the corpus.</td>
+</tr>
+<tr>
+<td><code>aid-pais:hasCitationContext</code></td>
+<td>CitationContext, repeatable</td>
+<td>A sentence in this paper that cites a corpus paper.</td>
+</tr>
+<tr>
+<td><code>aid-pais:fullTextParser</code></td>
+<td>xsd:string</td>
+<td>The parser and section source that produced the full-text layer,
+e.g. pyeuropepmc-jats/blocks.</td>
+</tr>
+<tr>
+<td><code>aid-pais:bodyWordCount</code></td>
+<td>xsd:integer</td>
+<td>Words in the parsed body sections.</td>
+</tr>
+<tr>
+<td><code>aid-pais:sectionCount</code></td>
+<td>xsd:integer</td>
+<td>Parsed body sections.</td>
+</tr>
+<tr>
+<td><code>aid-pais:tableCount</code></td>
+<td>xsd:integer</td>
+<td>Tables in the parsed full text.</td>
+</tr>
+<tr>
+<td><code>aid-pais:figureCount</code></td>
+<td>xsd:integer</td>
+<td>Figures in the parsed full text.</td>
+</tr>
+<tr>
+<td><code>aid-pais:parsedReferenceCount</code></td>
+<td>xsd:integer</td>
+<td>References found in the paper's own reference list. Distinct from
+referencesCount, which comes from a bibliographic source.</td>
+</tr>
+<tr>
+<td><code>aid-pais:hasDocumentSection</code></td>
+<td>DocumentSection, repeatable</td>
+<td>A parsed section of the paper's full text.</td>
+</tr>
+<tr>
+<td><code>aid-pais:hasDocumentTable</code></td>
+<td>DocumentTable, repeatable</td>
+<td>A parsed table of the paper's full text.</td>
+</tr>
+<tr>
+<td><code>aid-pais:fundingStatement</code></td>
+<td>xsd:string</td>
+<td>The paper's funding statement (first 2,000 characters).</td>
+</tr>
+<tr>
+<td><code>aid-pais:acknowledgementStatement</code></td>
+<td>xsd:string</td>
+<td>The paper's acknowledgements (first 2,000 characters).</td>
+</tr>
+<tr>
+<td><code>aid-pais:dataAvailabilityStatement</code></td>
+<td>xsd:string</td>
+<td>The paper's data-availability statement (first 2,000
+characters).</td>
+</tr>
+<tr>
+<td><code>aid-pais:ethicsStatement</code></td>
+<td>xsd:string</td>
+<td>The paper's ethics or consent statement (first 2,000
+characters).</td>
+</tr>
+<tr>
+<td><code>aid-pais:competingInterestsStatement</code></td>
+<td>xsd:string</td>
+<td>The paper's competing-interests statement (first 2,000
+characters).</td>
+</tr>
+<tr>
+<td><code>aid-pais:mentionsResource</code></td>
+<td>ResourceReference, repeatable</td>
+<td>A registration, repository, accession, cohort or code the text
+names.</td>
+</tr>
+<tr>
+<td><code>aid-pais:annotationStatus</code></td>
+<td>xsd:string</td>
+<td>How complete the text-mined terms are: complete (every provider
+answered), partial (a provider had a temporary error, so the paper is
+worth asking again) or unavailable (no provider has annotations for it).
+Absent when the annotations stage did not run.</td>
+</tr>
+<tr>
+<td><code>aid-pais:annotationSource</code></td>
+<td>xsd:string, repeatable</td>
+<td>A provider that returned annotations for the paper: europepmc or
+pubtator.</td>
+</tr>
+<tr>
+<td><code>aid-pais:mentionsTerm</code></td>
+<td>TextMinedTerm, repeatable</td>
+<td>A text-mined concept the paper mentions.</td>
+</tr>
+<tr>
+<td><code>aid-pais:hasTermOccurrence</code></td>
+<td>TermOccurrence, repeatable</td>
+<td>How this paper mentions a text-mined term, for terms mentioned
+often.</td>
+</tr>
+</tbody>
+</table>
+<h2 id="properties-of-authorship">Properties of
+<code>Authorship</code></h2>
+<table>
+<thead>
+<tr>
+<th>Property</th>
+<th>Range</th>
+<th></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>aid-pais:person</code></td>
+<td>Person</td>
+<td>The author, shared across papers when an ORCID or OpenAlex ID
+identifies them.</td>
+</tr>
+<tr>
+<td><code>aid-pais:position</code></td>
+<td>xsd:integer</td>
+<td>1-based place in the paper's author list.</td>
+</tr>
+<tr>
+<td><code>aid-pais:affiliationString</code></td>
+<td>xsd:string, repeatable</td>
+<td>An affiliation as the source gives it (Europe PMC, Crossref,
+OpenAlex). Text only: never minted into an Organization.</td>
+</tr>
+<tr>
+<td><code>schema:affiliation</code></td>
+<td>Organization, repeatable</td>
+<td>An institution (ROR record) the author gave for this paper.</td>
+</tr>
+</tbody>
+</table>
+<h2 id="properties-of-grant">Properties of <code>Grant</code></h2>
+<table>
+<thead>
+<tr>
+<th>Property</th>
+<th>Range</th>
+<th></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>schema:funder</code></td>
+<td>Funder</td>
+<td>The agency that awarded the grant.</td>
+</tr>
+</tbody>
+</table>
+<h2 id="properties-of-recordrelation">Properties of
+<code>RecordRelation</code></h2>
+<table>
+<thead>
+<tr>
+<th>Property</th>
+<th>Range</th>
+<th></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>aid-pais:relationKind</code></td>
+<td>xsd:string</td>
+<td>has_preprint, preprint_of, has_erratum, erratum_for, retracted_by,
+retraction_of, has_comment, comment_on, update_of, version, ...</td>
+</tr>
+<tr>
+<td><code>aid-pais:relationLabel</code></td>
+<td>xsd:string</td>
+<td>The label Europe PMC gives the link ('Preprint in', 'Erratum for',
+...).</td>
+</tr>
+<tr>
+<td><code>aid-pais:relatedRecordSource</code></td>
+<td>xsd:string</td>
+<td>Source database of the linked record (MED, PPR, ...).</td>
+</tr>
+<tr>
+<td><code>aid-pais:relatedRecordId</code></td>
+<td>xsd:string</td>
+<td>Europe PMC identifier of the linked record.</td>
+</tr>
+<tr>
+<td><code>aid-pais:relationReference</code></td>
+<td>xsd:string</td>
+<td>The citation text Europe PMC gives for the linked record.</td>
+</tr>
+<tr>
+<td><code>aid-pais:relationNote</code></td>
+<td>xsd:string</td>
+<td>How Europe PMC made the link (for example a title and first-author
+match).</td>
+</tr>
+<tr>
+<td><code>aid-pais:relatedPaper</code></td>
+<td>DocumentMetadata</td>
+<td>The linked record, when it is a paper of the corpus.</td>
+</tr>
+</tbody>
+</table>
+<h2 id="properties-of-identitylink">Properties of
+<code>IdentityLink</code></h2>
+<table>
+<thead>
+<tr>
+<th>Property</th>
+<th>Range</th>
+<th></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>aid-pais:identityRelation</code></td>
+<td>xsd:string</td>
+<td>has_preprint, preprint_of, has_version, possibly_same_as, amends or
+amended_by.</td>
+</tr>
+<tr>
+<td><code>aid-pais:identityReason</code></td>
+<td>xsd:string</td>
+<td>Why the records were linked (same title, year and first author; DOIs
+differ only by a version suffix) or not merged (year differs, first
+author differs).</td>
+</tr>
+<tr>
+<td><code>aid-pais:linkedPaper</code></td>
+<td>DocumentMetadata</td>
+<td>The other record of the corpus.</td>
+</tr>
+</tbody>
+</table>
+<h2 id="properties-of-substance">Properties of
+<code>Substance</code></h2>
+<table>
+<thead>
+<tr>
+<th>Property</th>
+<th>Range</th>
+<th></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>aid-pais:registryNumber</code></td>
+<td>xsd:string</td>
+<td>CAS or EC registry number of the substance.</td>
+</tr>
+</tbody>
+</table>
+<h2 id="properties-of-sourcehit">Properties of
+<code>SourceHit</code></h2>
+<table>
+<thead>
+<tr>
+<th>Property</th>
+<th>Range</th>
+<th></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>aid-pais:fromSource</code></td>
+<td>DiscoverySource</td>
+<td>The discovery source that returned this record.</td>
+</tr>
+<tr>
+<td><code>aid-pais:sourceRecordId</code></td>
+<td>xsd:string</td>
+<td>The id the source uses for the paper (PMID, OpenAlex W id, Semantic
+Scholar paper id, Europe PMC id).</td>
+</tr>
+<tr>
+<td><code>aid-pais:sourceRecordType</code></td>
+<td>xsd:string</td>
+<td>The kind of record the source returned (Europe PMC: MED, PMC,
+PPR...; others: PUBMED, OPENALEX, SEMANTICSCHOLAR).</td>
+</tr>
+</tbody>
+</table>
+<h2 id="properties-of-fulltextlink">Properties of
+<code>FullTextLink</code></h2>
+<table>
+<thead>
+<tr>
+<th>Property</th>
+<th>Range</th>
+<th></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>aid-pais:linkStyle</code></td>
+<td>xsd:string</td>
+<td>Document style of the link: pdf, html, doi, abs.</td>
+</tr>
+<tr>
+<td><code>aid-pais:linkAvailability</code></td>
+<td>xsd:string</td>
+<td>Access of the link: Open access, Free, Subscription required.</td>
+</tr>
+<tr>
+<td><code>aid-pais:linkSite</code></td>
+<td>xsd:string</td>
+<td>The site the link points to: Europe_PMC, DOI, Unpaywall,
+PubMedCentral, ...</td>
+</tr>
+</tbody>
+</table>
+<h2 id="properties-of-openaccesslocation">Properties of
+<code>OpenAccessLocation</code></h2>
+<table>
+<thead>
+<tr>
+<th>Property</th>
+<th>Range</th>
+<th></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>aid-pais:pdfUrl</code></td>
+<td>xsd:anyURI</td>
+<td>Direct link to the copy's PDF.</td>
+</tr>
+<tr>
+<td><code>aid-pais:articleVersion</code></td>
+<td>xsd:string</td>
+<td>submittedVersion, acceptedVersion or publishedVersion.</td>
+</tr>
+<tr>
+<td><code>aid-pais:hostType</code></td>
+<td>xsd:string</td>
+<td>publisher or repository.</td>
+</tr>
+</tbody>
+</table>
+<h2 id="properties-of-journal">Properties of <code>Journal</code></h2>
+<table>
+<thead>
+<tr>
+<th>Property</th>
+<th>Range</th>
+<th></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>aid-pais:essn</code></td>
+<td>xsd:string</td>
+<td>The journal's electronic ISSN.</td>
+</tr>
+<tr>
+<td><code>aid-pais:nlmId</code></td>
+<td>xsd:string</td>
+<td>The journal's NLM catalog identifier.</td>
+</tr>
+<tr>
+<td><code>aid-pais:medlineAbbreviation</code></td>
+<td>xsd:string</td>
+<td>The journal's MEDLINE title abbreviation.</td>
+</tr>
+<tr>
+<td><code>aid-pais:isoAbbreviation</code></td>
+<td>xsd:string</td>
+<td>The journal's ISO title abbreviation.</td>
+</tr>
+<tr>
+<td><code>aid-pais:isInDoaj</code></td>
+<td>xsd:boolean</td>
+<td>The journal is listed in the Directory of Open Access Journals.</td>
+</tr>
+<tr>
+<td><code>aid-pais:isOpenAccessJournal</code></td>
+<td>xsd:boolean</td>
+<td>Unpaywall's journal-level open-access flag.</td>
+</tr>
+</tbody>
+</table>
+<h2 id="properties-of-icitemetadata">Properties of
+<code>ICiteMetadata</code></h2>
+<table>
+<thead>
+<tr>
+<th>Property</th>
+<th>Range</th>
+<th></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>aid-pais:citationsPerYear</code></td>
+<td>xsd:double</td>
+<td>Mean citations per year (NIH iCite).</td>
+</tr>
+</tbody>
+</table>
+<h2 id="properties-of-citationcontext">Properties of
+<code>CitationContext</code></h2>
+<table>
+<thead>
+<tr>
+<th>Property</th>
+<th>Range</th>
+<th></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>aid-pais:contextText</code></td>
+<td>xsd:string</td>
+<td>The sentence around the citation.</td>
+</tr>
+<tr>
+<td><code>aid-pais:contextSectionPath</code></td>
+<td>xsd:string</td>
+<td>Section path of the paragraph the citation sits in.</td>
+</tr>
+<tr>
+<td><code>aid-pais:contextSectionKind</code></td>
+<td>xsd:string</td>
+<td>Kind of that section's top-level heading.</td>
+</tr>
+<tr>
+<td><code>aid-pais:citingPaper</code></td>
+<td>DocumentMetadata</td>
+<td>The paper whose text this is.</td>
+</tr>
+<tr>
+<td><code>aid-pais:citedPaper</code></td>
+<td>DocumentMetadata</td>
+<td>The corpus paper the sentence cites.</td>
+</tr>
+</tbody>
+</table>
+<h2 id="properties-of-externalwork">Properties of
+<code>ExternalWork</code></h2>
+<table>
+<thead>
+<tr>
+<th>Property</th>
+<th>Range</th>
+<th></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>dc:identifier</code></td>
+<td>xsd:string</td>
+<td>DOI of the external work.</td>
+</tr>
+<tr>
+<td><code>schema:datePublished</code></td>
+<td>xsd:gYear</td>
+<td>Publication year from the citing reference list.</td>
+</tr>
+</tbody>
+</table>
+<h2 id="properties-of-documentsection">Properties of
+<code>DocumentSection</code></h2>
+<table>
+<thead>
+<tr>
+<th>Property</th>
+<th>Range</th>
+<th></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>aid-pais:sectionPosition</code></td>
+<td>xsd:integer</td>
+<td>1-based position in the parsed paper.</td>
+</tr>
+<tr>
+<td><code>aid-pais:sectionTitle</code></td>
+<td>xsd:string</td>
+<td>The section's own heading.</td>
+</tr>
+<tr>
+<td><code>aid-pais:sectionPath</code></td>
+<td>xsd:string</td>
+<td>Heading path from the top-level section, joined with /, so
+subsections that share a heading stay distinct.</td>
+</tr>
+<tr>
+<td><code>aid-pais:sectionKind</code></td>
+<td>xsd:string</td>
+<td>introduction, methods, results, discussion (also conclusions and
+limitations), references, back_matter (contributions, funding, ethics,
+data availability, footnotes), untitled or other, from the top-level
+heading.</td>
+</tr>
+<tr>
+<td><code>aid-pais:wordCount</code></td>
+<td>xsd:integer</td>
+<td>Words in the section.</td>
+</tr>
+<tr>
+<td><code>aid-pais:paragraphCount</code></td>
+<td>xsd:integer</td>
+<td>Paragraphs in the section.</td>
+</tr>
+</tbody>
+</table>
+<h2 id="properties-of-documenttable">Properties of
+<code>DocumentTable</code></h2>
+<table>
+<thead>
+<tr>
+<th>Property</th>
+<th>Range</th>
+<th></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>aid-pais:tablePosition</code></td>
+<td>xsd:integer</td>
+<td>1-based position among the paper's tables.</td>
+</tr>
+<tr>
+<td><code>aid-pais:caption</code></td>
+<td>xsd:string</td>
+<td>The table's caption (first 500 characters).</td>
+</tr>
+<tr>
+<td><code>aid-pais:rowCount</code></td>
+<td>xsd:integer</td>
+<td>Rows in the table.</td>
+</tr>
+<tr>
+<td><code>aid-pais:columnCount</code></td>
+<td>xsd:integer</td>
+<td>Columns in the table.</td>
+</tr>
+<tr>
+<td><code>aid-pais:columnHeaders</code></td>
+<td>xsd:string</td>
+<td>The header cells joined with '</td>
+</tr>
+</tbody>
+</table>
+<h2 id="properties-of-resourcereference">Properties of
+<code>ResourceReference</code></h2>
+<table>
+<thead>
+<tr>
+<th>Property</th>
+<th>Range</th>
+<th></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>aid-pais:resourceKind</code></td>
+<td>xsd:string</td>
+<td>trial_registration, review_registration, preregistration,
+code_repository, data_repository, data_accession, cohort_or_dataset or
+classification_code.</td>
+</tr>
+<tr>
+<td><code>aid-pais:resourceScheme</code></td>
+<td>xsd:string</td>
+<td>nct, isrctn, prospero, osf, github, zenodo, geo, icd10, cohort,
+...</td>
+</tr>
+<tr>
+<td><code>aid-pais:resourceId</code></td>
+<td>xsd:string</td>
+<td>The identifier within its scheme.</td>
+</tr>
+<tr>
+<td><code>schema:url</code></td>
+<td>xsd:anyURI</td>
+<td>A resolvable link, when the scheme has one.</td>
+</tr>
+</tbody>
+</table>
+<h2 id="properties-of-textminedterm">Properties of
+<code>TextMinedTerm</code></h2>
+<table>
+<thead>
+<tr>
+<th>Property</th>
+<th>Range</th>
+<th></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>aid-pais:termType</code></td>
+<td>xsd:string</td>
+<td>DISEASE, GENE, CHEMICAL, ORGANISM, SYMPTOM, GO_TERM, ANATOMY,
+METHOD, ...</td>
+</tr>
+<tr>
+<td><code>aid-pais:conceptId</code></td>
+<td>xsd:string, repeatable</td>
+<td>The ontology CURIEs of the concept (MeSH, UMLS, NCBI Gene, ...); the
+services name one concept with different ones, so a merged term lists
+each, the preferred first.</td>
+</tr>
+</tbody>
+</table>
+<h2 id="properties-of-termoccurrence">Properties of
+<code>TermOccurrence</code></h2>
+<table>
+<thead>
+<tr>
+<th>Property</th>
+<th>Range</th>
+<th></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>aid-pais:ofTerm</code></td>
+<td>TextMinedTerm</td>
+<td>The term.</td>
+</tr>
+<tr>
+<td><code>aid-pais:occurrenceCount</code></td>
+<td>xsd:integer</td>
+<td>Mentions of the term in the paper.</td>
+</tr>
+<tr>
+<td><code>aid-pais:inSection</code></td>
+<td>xsd:string, repeatable</td>
+<td>A section the term is mentioned in.</td>
+</tr>
+<tr>
+<td><code>aid-pais:annotationProvider</code></td>
+<td>xsd:string, repeatable</td>
+<td>europepmc and/or pubtator: every service that mentioned the term in
+the paper.</td>
+</tr>
+</tbody>
+</table>
+</body>
+</html>

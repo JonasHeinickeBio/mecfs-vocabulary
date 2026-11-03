@@ -1,0 +1,613 @@
+@prefix : <https://w3id.org/mecfs/kg/> .
+@prefix owl: <http://www.w3.org/2002/07/owl#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix dc: <http://purl.org/dc/elements/1.1/> .
+@prefix dcterms: <http://purl.org/dc/terms/> .
+@prefix IAO: <http://purl.obolibrary.org/obo/IAO_> .
+@prefix ECO: <http://purl.obolibrary.org/obo/ECO_> .
+@prefix NCIT: <http://purl.obolibrary.org/obo/NCIT_> .
+@prefix EDAM: <http://edamontology.org/data_> .
+@prefix SIO: <http://semanticscience.org/resource/SIO_> .
+@prefix RO: <http://purl.obolibrary.org/obo/RO_> .
+@prefix GSSO: <http://purl.obolibrary.org/obo/GSSO_> .
+@prefix bibo: <http://purl.org/ontology/bibo/> .
+@prefix biolink: <https://w3id.org/biolink/vocab/> .
+@prefix evorao: <https://w3id.org/evorao/> .
+@prefix schema: <http://schema.org/> .
+@prefix wikidata: <https://www.wikidata.org/wiki/Property:> .
+@prefix uniprot: <http://purl.uniprot.org/core/> .
+@prefix skos: <http://www.w3.org/2004/02/skos/core#> .
+@prefix prov: <http://www.w3.org/ns/prov#> .
+@prefix foaf: <http://xmlns.com/foaf/0.1/> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+
+<https://w3id.org/mecfs/ontology/evidence> a owl:Ontology ;
+  owl:imports <https://w3id.org/mecfs/ontology/core> ,
+              <http://purl.obolibrary.org/obo/ncit.owl> ,
+              <http://purl.obolibrary.org/obo/eco.owl> ,
+              <http://edamontology.org/edam.owl> ,
+              <http://semanticscience.org/ontology/sio.owl> ,
+              <http://purl.obolibrary.org/obo/gsso.owl> ,
+              <https://w3id.org/biolink/biolink.owl> ,
+              <http://www.w3.org/ns/prov-o> ;
+  owl:versionIRI <https://w3id.org/mecfs/ontology/evidence/2025-09-22> ;
+  dc:title "AID-PAIS Evidence Ontology" ;
+  dc:description "Evidence module for AID-PAIS ontology, covering evidence, references, and clinical studies." .
+
+# =====================================================
+# Core classes (entities commonly used across modules)
+# =====================================================
+
+:Evidence a owl:Class ;
+  rdfs:subClassOf :Entity ;
+  rdfs:label "Evidence" ;
+  IAO:0000115 "Information supporting a claim, observation, or finding." ;
+  owl:equivalentClass NCIT:C43583 ;
+  skos:exactMatch ECO:0000000 , EDAM:2042 , SIO:001394 .
+
+# Publication / bibliographic classes
+
+:Reference a owl:Class ;
+  rdfs:subClassOf :Evidence ;
+  rdfs:label "Reference" ;
+  IAO:0000115 "A bibliographic reference or citation entry describing a source document." ;
+  rdfs:comment "Represents bibliographic metadata and citation records for source materials. Use :AcademicArticle for the actual published document itself." ;
+  owl:equivalentClass NCIT:C25641 ;
+  skos:exactMatch SIO:000176 ;
+  skos:closeMatch NCIT:C41196 , IAO:0000301 , SIO:000174 .
+
+:AcademicArticle a owl:Class ;
+  rdfs:subClassOf :Evidence ;
+  rdfs:label "Academic Article" ;
+  IAO:0000115 "A scholarly article or research paper published in an academic journal." ;
+  rdfs:comment "Represents the actual published scholarly work, including peer-reviewed research articles, reviews, and other academic publications. Distinct from :Reference which represents the bibliographic citation metadata." ;
+  owl:equivalentClass bibo:AcademicArticle ;
+  skos:exactMatch schema:ScholarlyArticle .
+
+:Journal a owl:Class ;
+  rdfs:subClassOf :Entity ;
+  rdfs:label "Journal" ;
+  IAO:0000115 "A periodical publication dedicated to disseminating scholarly research and academic content." ;
+  rdfs:comment "Represents academic journals, scientific periodicals, and other serial publications with structured metadata (ISSN, publisher, impact factor)." ;
+  owl:equivalentClass NCIT:C40976 ;
+  skos:exactMatch bibo:Journal ;
+  skos:closeMatch NCIT:C93226 .
+
+# Author / person and organization classes
+
+:Person a owl:Class ;
+  rdfs:subClassOf :Entity ;
+  rdfs:label "Person" ;
+  IAO:0000115 "An individual author, contributor, or agent associated with a publication or study." ;
+  owl:equivalentClass schema:Person ;
+  skos:exactMatch foaf:Person .
+
+:Organization a owl:Class ;
+  rdfs:subClassOf :Entity ;
+  rdfs:label "Organization" ;
+  IAO:0000115 "An established society, corporation, foundation, or other organized body founded for a specific purpose, such as research, healthcare, or education." ;
+  rdfs:comment "Represents institutions, companies, universities, research centers, and other formal organizations." ;
+  owl:equivalentClass NCIT:C41206 ,
+                      foaf:Organization ;
+  skos:exactMatch <http://www.ebi.ac.uk/efo/EFO_0001738> ,
+                  <http://purl.obolibrary.org/obo/SLSO_0000047> ;
+  skos:closeMatch schema:Organization .
+
+:Institution a owl:Class ;
+  rdfs:subClassOf :Organization ;
+  rdfs:label "Institution" ;
+  IAO:0000115 "An established organization dedicated to education, research, healthcare, or public service." ;
+  rdfs:comment "Includes universities, research centers, hospitals, and government agencies involved in scientific research." ;
+  owl:equivalentClass NCIT:C41206 ;
+  skos:exactMatch <http://www.ebi.ac.uk/efo/EFO_0001738> .
+
+# Observation / findings
+
+:Observation a owl:Class ;
+  rdfs:subClassOf :Evidence ;
+  rdfs:label "Observation" ;
+  IAO:0000115 "A recorded fact, measurement, or statement about phenomena observed during research or investigation." ;
+  rdfs:comment "Represents empirical observations, findings, or statements extracted from research studies. Includes key findings, measurements, and documented phenomena." ;
+  owl:equivalentClass NCIT:C25598 ;
+  skos:exactMatch <http://purl.obolibrary.org/obo/OBI_0000519> ,
+                  SIO:000897 .
+
+:KeyFinding a owl:Class ;
+  rdfs:subClassOf :Observation ;
+  rdfs:label "Key Finding" ;
+  IAO:0000115 "A significant result, conclusion, or discovery extracted from a research study or publication." ;
+  rdfs:comment "Represents primary outcomes, secondary findings, or important observations documented in scientific literature." .
+
+:EntityMention a owl:Class ;
+  rdfs:subClassOf :Evidence ;
+  rdfs:label "Entity Mention" ;
+  IAO:0000115 "A bare mention of an entity in text, carrying no measured relation, direction, or magnitude." ;
+  rdfs:comment "Emitted by orchestration/stages/assembly.py (AssemblyStage) for every extraction whose predicate is \"mentions\", as opposed to a full subject-predicate-object finding, which is typed :Observation instead. Before this split existed, bare mentions were typed :Observation too; some older run graphs on disk still reflect that. Distinct from mecfs:EntityMention in schemas/linkml/nlp/nlp.yaml, which is an unrelated NLP-stage concept (a raw, NIF-anchored NER hit with begin/end offsets, before assembly) -- the two happen to share a class name but not a namespace, a meaning, or a producing stage. See validation/shapes/observation.shacl.ttl's EntityMentionShape, which was this class's only written-down contract until now." ;
+  skos:closeMatch :Observation .
+
+# =====================================================
+# Study types and classifications
+# =====================================================
+
+:Study a owl:Class ;
+  rdfs:subClassOf :Evidence ;
+  rdfs:label "Study" ;
+  IAO:0000115 "A research investigation designed to generate evidence, which may include clinical, laboratory, observational, or other types of studies." ;
+  owl:equivalentClass NCIT:C63536 .
+
+:ClinicalStudy a owl:Class ; rdfs:subClassOf :Study , NCIT:C63536 ; rdfs:label "Clinical Study" ; IAO:0000115 "A research investigation involving human participants to generate clinical evidence." ; owl:equivalentClass NCIT:C15206 .
+
+:LaboratoryStudy a owl:Class ; rdfs:subClassOf :Study , NCIT:C63536 ; rdfs:label "Laboratory Study" ; IAO:0000115 "Research done in a laboratory, may use special equipment, cells, or animals to investigate effects or mechanisms." ; owl:equivalentClass NCIT:C28278 .
+
+:ObservationalStudy a owl:Class ; rdfs:subClassOf :Study ; rdfs:label "Observational Study" ; IAO:0000115 "Studies among populations that involve no intervention or alteration in the status of the participants." ; owl:equivalentClass NCIT:C16084 .
+
+:CohortStudy a owl:Class ; rdfs:subClassOf :Study ; rdfs:label "Cohort Study" ; IAO:0000115 "A research study that compares outcomes in groups of individuals who differ by a certain characteristic." ; owl:equivalentClass NCIT:C15208 .
+
+:CaseStudy a owl:Class ; rdfs:subClassOf :Study ; rdfs:label "Case Study" ; IAO:0000115 "An uncontrolled observational study containing a detailed report of the diagnosis, treatment, and follow-up of an individual patient." ; owl:equivalentClass NCIT:C15362 .
+
+:CaseControlStudy a owl:Class ; rdfs:subClassOf :Study ; rdfs:label "Case-Control Study" ; IAO:0000115 "A study that compares two groups: those with the disease or condition under study and a similar group without it." ; owl:equivalentClass NCIT:C15197 .
+
+:RandomizedControlledTrial a owl:Class ; rdfs:subClassOf :Study ; rdfs:label "Randomized Controlled Trial" ; IAO:0000115 "A clinical trial in which participants are assigned by chance to separate groups to evaluate treatments." ; owl:equivalentClass NCIT:C46079 .
+
+:ClinicalTrial a owl:Class ; rdfs:subClassOf :Study ; rdfs:label "Clinical Trial" ; IAO:0000115 "A research study that prospectively assigns human participants to interventions to evaluate effects on health outcomes." ; owl:equivalentClass NCIT:C71104 .
+
+:MetaAnalysis a owl:Class ; rdfs:subClassOf :Study ; rdfs:label "Meta-Analysis" ; IAO:0000115 "A set of statistical procedures designed to accumulate results across independent studies." ; owl:equivalentClass NCIT:C17886 .
+
+:SystematicReview a owl:Class ; rdfs:subClassOf :Study ; rdfs:label "Systematic Review" ; IAO:0000115 "A review of primary literature that attempts to identify, appraise, and synthesize all empirical evidence to answer a research question." ; owl:equivalentClass GSSO:006344 .
+
+:InterventionalStudy a owl:Class ; rdfs:subClassOf :Study ; rdfs:label "Interventional Study" ; IAO:0000115 "A study in which individuals are assigned by an investigator to receive specific interventions." ; owl:equivalentClass NCIT:C16140 .
+
+:DiagnosticTrial a owl:Class ; rdfs:subClassOf :Study ; rdfs:label "Diagnostic Trial" ; IAO:0000115 "Clinical evaluation of the utility of diagnostic procedures." ; owl:equivalentClass NCIT:C15733 .
+
+:CommunityTrial a owl:Class ; rdfs:subClassOf :Study ; rdfs:label "Community Trial" ; IAO:0000115 "A planned experiment that involves administering an exposure within a community to elucidate its impact on disease incidence." ; owl:equivalentClass NCIT:C39365 .
+
+:RetrospectiveCohortStudy a owl:Class ; rdfs:subClassOf :CohortStudy ; rdfs:label "Retrospective Cohort Study" ; IAO:0000115 "A longitudinal cohort study in which enrollment occurs after outcomes of interest have developed." ; owl:equivalentClass NCIT:C93228 .
+
+:ProspectiveCohortStudy a owl:Class ; rdfs:subClassOf :CohortStudy ; rdfs:label "Prospective Cohort Study" ; IAO:0000115 "A longitudinal cohort study in which enrollment occurs before outcomes of interest have developed." ; owl:equivalentClass NCIT:C53308 .
+
+# =====================================================
+# Provenance & extraction (PROV-O aligned)
+# =====================================================
+
+:ExtractionActivity a owl:Class ;
+  rdfs:label "Extraction Activity" ;
+  IAO:0000115 "A process or activity that extracts or generates metadata or evidence from a source document." ;
+  rdfs:comment "Represents the actual extraction process, including automated tools, manual curation, or hybrid approaches. In PROV-O, activities are distinct from entities." ;
+  owl:equivalentClass prov:Activity ;
+  skos:exactMatch NCIT:C44285 ;
+  skos:closeMatch <http://purl.obolibrary.org/obo/OBI_0302884> .
+
+:ExtractionAgent a owl:Class ;
+  rdfs:label "Extraction Agent" ;
+  IAO:0000115 "A person, software, or system responsible for performing an extraction activity." ;
+  rdfs:comment "Can represent LLM agents, human curators, software tools, or organizational entities. In PROV-O, agents are distinct from entities." ;
+  owl:equivalentClass prov:Agent ;
+  rdfs:subClassOf foaf:Agent .
+
+:Provenance a owl:Class ;
+  rdfs:subClassOf :Entity ;
+  rdfs:label "Provenance" ;
+  IAO:0000115 "Information about the origin, creation, and history of an entity, including data lineage, custody, and transformations." ;
+  rdfs:comment "Tracks metadata about data sources, extraction processes, transformations, and quality attributes." ;
+  owl:equivalentClass NCIT:C43581 ;
+  skos:exactMatch prov:Entity ,
+                  <http://purl.obolibrary.org/obo/SEPIO_0000058> ,
+                  <http://purl.obolibrary.org/obo/T4FS_0000309> ,
+                  <http://purl.obolibrary.org/obo/NCIT_C189181> ;
+  skos:relatedMatch dcterms:provenance .
+
+# PROV-O properties for relating provenance classes
+
+:wasGeneratedBy a owl:ObjectProperty ;
+  rdfs:label "was generated by" ;
+  rdfs:domain :Entity ;
+  rdfs:range :ExtractionActivity ;
+  IAO:0000115 "Links an entity to the activity that generated it." ;
+  rdfs:comment "Indicates which extraction or transformation process created a KG entity." ;
+  owl:equivalentProperty prov:wasGeneratedBy .
+
+:wasAttributedTo a owl:ObjectProperty ;
+  rdfs:label "was attributed to" ;
+  rdfs:domain :Entity ;
+  rdfs:range :ExtractionAgent ;
+  IAO:0000115 "Links an entity to the agent responsible for its creation or extraction." ;
+  rdfs:comment "Indicates who or what (person, software, organization) is responsible for an entity." ;
+  owl:equivalentProperty prov:wasAttributedTo .
+
+:wasAssociatedWith a owl:ObjectProperty ;
+  rdfs:label "was associated with" ;
+  rdfs:domain :ExtractionActivity ;
+  rdfs:range :ExtractionAgent ;
+  rdfs:comment "Indicates which agent (person, software) executed an extraction activity." ;
+  owl:equivalentProperty prov:wasAssociatedWith .
+
+:used a owl:ObjectProperty ;
+  rdfs:label "used" ;
+  rdfs:domain :ExtractionActivity ;
+  rdfs:range :Entity ;
+  IAO:0000115 "Links an activity to an entity consumed, processed, or utilized during its execution." ;
+  rdfs:comment "Indicates which source documents or data entities were used as input to an extraction activity." ;
+  owl:equivalentProperty prov:used .
+
+:hadActivity a owl:ObjectProperty ;
+  rdfs:label "had activity" ;
+  rdfs:domain :Provenance ;
+  rdfs:range :ExtractionActivity ;
+  rdfs:comment "Connects provenance metadata to the specific extraction or transformation activity." ;
+  owl:equivalentProperty prov:hadActivity .
+
+:actedOnBehalfOf a owl:ObjectProperty ;
+  rdfs:label "acted on behalf of" ;
+  rdfs:domain :ExtractionAgent ;
+  rdfs:range :ExtractionAgent ;
+  rdfs:comment "e.g., software acting on behalf of a researcher, or researcher acting for an organization." ;
+  owl:equivalentProperty prov:actedOnBehalfOf .
+
+:startedAtTime a owl:DatatypeProperty ;
+  rdfs:label "started at time" ;
+  rdfs:domain :ExtractionActivity ;
+  rdfs:range xsd:dateTime ;
+  IAO:0000115 "The time when an activity began." ;
+  owl:equivalentProperty prov:startedAtTime .
+
+:endedAtTime a owl:DatatypeProperty ;
+  rdfs:label "ended at time" ;
+  rdfs:domain :ExtractionActivity ;
+  rdfs:range xsd:dateTime ;
+  IAO:0000115 "The time when an activity ended." ;
+  owl:equivalentProperty prov:endedAtTime .
+
+# =====================================================
+# Object and datatype properties organised by domain
+# =====================================================
+
+# --- Publication & bibliographic properties ---
+
+:publishedIn a owl:ObjectProperty ;
+  rdfs:label "published in" ;
+  rdfs:domain :AcademicArticle ;
+  rdfs:range :Journal ;
+  IAO:0000115 "Links an academic article to the journal in which it was published." ;
+  owl:equivalentProperty schema:isPartOf .
+
+:abstract a owl:DatatypeProperty ;
+  rdfs:label "abstract" ;
+  IAO:0000115 "Abstract of the referenced publication." ;
+  owl:equivalentProperty dcterms:abstract , schema:abstract ;
+  rdfs:range xsd:string .
+
+:keywords a owl:DatatypeProperty ;
+  rdfs:label "keywords" ;
+  IAO:0000115 "Keywords associated with the referenced publication." ;
+  owl:equivalentProperty schema:keywords , biolink:keywords ;
+  rdfs:range xsd:string .
+
+:meshTerms a owl:DatatypeProperty ;
+  rdfs:label "MeSH terms" ;
+  IAO:0000115 "Medical Subject Headings terms for the referenced publication." ;
+  owl:equivalentProperty biolink:mesh_terms .
+
+:fullTextUrl a owl:DatatypeProperty ;
+  rdfs:label "full text URL" ;
+  IAO:0000115 "URL to the full text of the referenced publication." ;
+  owl:equivalentProperty schema:url ;
+  rdfs:range xsd:anyURI .
+
+:issn a owl:DatatypeProperty , owl:FunctionalProperty ;
+  rdfs:label "ISSN" ;
+  rdfs:domain :Journal ;
+  rdfs:range xsd:string ;
+  IAO:0000115 "International Standard Serial Number for the journal." ;
+  owl:equivalentProperty schema:issn .
+
+:volume a owl:DatatypeProperty ; rdfs:label "Volume" ; IAO:0000115 "Volume of the journal in which the publication appeared." ; owl:equivalentProperty uniprot:volume .
+:issue a owl:DatatypeProperty ; rdfs:label "Issue" ; IAO:0000115 "Issue of the journal in which the publication appeared." ; owl:equivalentProperty dcterms:issue .
+:pages a owl:DatatypeProperty ; rdfs:label "Pages" ; IAO:0000115 "Page numbers of the referenced publication." ; owl:equivalentProperty uniprot:pages .
+:language a owl:DatatypeProperty ; rdfs:label "Language" ; IAO:0000115 "Language of the referenced publication." ; owl:equivalentProperty dc:language , schema:language .
+:publicationType a owl:DatatypeProperty ; rdfs:label "publication type" ; IAO:0000115 "Type of the referenced publication (e.g., research article, review)." ; owl:equivalentProperty biolink:publication_type .
+
+:pubmedId a owl:DatatypeProperty , owl:FunctionalProperty ; rdfs:label "PubMed ID" ; IAO:0000115 "Unique PubMed identifier for the referenced publication." ; owl:equivalentProperty wikidata:P698 ; rdfs:range xsd:string .
+:doi a owl:DatatypeProperty , owl:FunctionalProperty ; rdfs:label "DOI" ; IAO:0000115 "Digital Object Identifier for the referenced publication." ; owl:equivalentProperty bibo:doi , wikidata:P356 ; rdfs:range xsd:string .
+:title a owl:DatatypeProperty ; rdfs:label "title" ; IAO:0000115 "Title of the referenced publication." ; owl:equivalentProperty dc:title , dcterms:title ; rdfs:range xsd:string .
+
+# --- Additional bibliographic / metadata properties used in the KG but not previously declared ---
+
+:category a owl:DatatypeProperty ;
+  rdfs:label "category" ;
+  rdfs:domain :Reference ;
+  rdfs:range xsd:string ;
+  IAO:0000115 "A lightweight categorical label applied to a reference (e.g., 'review', 'case report', 'meta-analysis', or custom tagging)." ;
+  rdfs:comment "Use for coarse-grained classification or user-defined tags associated with a bibliographic reference." .
+
+:source a owl:DatatypeProperty ;
+  rdfs:label "source" ;
+  rdfs:domain :Entity ;
+  rdfs:range xsd:string ;
+  IAO:0000115 "Source identifier or short descriptor indicating where the metadata or record originated (e.g., 'EuropePMC', 'PubMed', 'PMC dump')." ;
+  owl:equivalentProperty dcterms:source ;
+  rdfs:comment "Prefer persistent/source identifiers where available; use :provenance for richer provenance records." .
+
+:isOpenAccess a owl:DatatypeProperty ;
+  rdfs:label "is open access" ;
+  rdfs:domain :AcademicArticle ;
+  rdfs:range xsd:boolean ;
+  IAO:0000115 "Boolean flag indicating whether the article is available as open access." ;
+  rdfs:comment "True when the full text is openly available (subject to license)." ;
+  owl:equivalentProperty schema:isAccessibleForFree .
+
+:openAccessStatus a owl:DatatypeProperty ;
+  rdfs:label "open access status" ;
+  rdfs:domain :AcademicArticle ;
+  rdfs:range xsd:string ;
+  IAO:0000115 "Open access status string (e.g., 'gold', 'green', 'bronze', 'closed')." ;
+  rdfs:comment "Use controlled strings where possible to indicate the OA pathway." .
+
+:citationPercentile a owl:DatatypeProperty ;
+  rdfs:label "citation percentile" ;
+  rdfs:domain :AcademicArticle ;
+  rdfs:range xsd:float ;
+  IAO:0000115 "A percentile score (0-100) representing citation impact relative to a comparator set." ;
+  rdfs:comment "Higher values indicate greater citation impact compared to peers (source-dependent)." .
+
+:citedByCount a owl:DatatypeProperty ;
+  rdfs:label "cited by count" ;
+  rdfs:domain :AcademicArticle ;
+  rdfs:range xsd:integer ;
+  IAO:0000115 "Number of times the article has been cited (as reported by the source)." ;
+  rdfs:comment "May be source-specific (e.g., CrossRef, Scopus, EuropePMC)." .
+
+:referenceCount a owl:DatatypeProperty ;
+  rdfs:label "reference count" ;
+  rdfs:domain :AcademicArticle ;
+  rdfs:range xsd:integer ;
+  IAO:0000115 "Number of references cited within the article." ;
+  rdfs:comment "Useful bibliometric metadata indicating article's reference list length." .
+
+:isCorresponding a owl:DatatypeProperty ;
+  rdfs:label "is corresponding" ;
+  rdfs:domain :Person ;
+  rdfs:range xsd:boolean ;
+  IAO:0000115 "Flag indicating whether the person is a corresponding author for a given reference or article." ;
+  rdfs:comment "When true, indicates the person is listed as the corresponding contact for the publication." .
+
+:sameAs a owl:ObjectProperty ;
+  rdfs:label "same as" ;
+  rdfs:domain :Entity ;
+  rdfs:range rdfs:Resource ;
+  rdfs:comment "Link to an external identifier or resource considered equivalent to this entity." ;
+  owl:equivalentProperty owl:sameAs .
+
+# --- Authorship & affiliation ---
+
+:author a owl:ObjectProperty ;
+  rdfs:domain :Reference ;
+  rdfs:range :Person ;
+  rdfs:label "author" ;
+  IAO:0000115 "Links a Reference to its author(s) as Person entities." ;
+  rdfs:comment "Represents the authorship relationship between a bibliographic reference and the person(s) who created it. Use :hasAuthor for AcademicArticle entities." ;
+  owl:equivalentProperty schema:author ;
+  owl:inverseOf :isAuthorOf .
+
+:isAuthorOf a owl:ObjectProperty ;
+  rdfs:label "is author of" ;
+  rdfs:domain :Person ;
+  rdfs:range :Reference ;
+  IAO:0000115 "Links a Person to a Reference they authored." ;
+  rdfs:comment "Inverse of :author." ;
+  owl:inverseOf :author .
+
+:hasAuthor a owl:ObjectProperty ;
+  rdfs:label "has author" ;
+  rdfs:domain :AcademicArticle ;
+  rdfs:range :Person ;
+  IAO:0000115 "Links an academic article to one of its authors." ;
+  rdfs:comment "Represents the authorship relationship for scholarly publications. For multiple authors, use multiple assertions of this property to maintain ordering via additional metadata if needed." ;
+  owl:equivalentProperty schema:author ;
+  owl:inverseOf :authorOf .
+
+:authorOf a owl:ObjectProperty ;
+  rdfs:label "author of" ;
+  rdfs:domain :Person ;
+  rdfs:range :AcademicArticle ;
+  IAO:0000115 "Links a Person to an AcademicArticle they authored." ;
+  rdfs:comment "Inverse of :hasAuthor." ;
+  owl:inverseOf :hasAuthor .
+
+:affiliation a owl:ObjectProperty ;
+  rdfs:label "affiliation" ;
+  rdfs:domain :Person ;
+  rdfs:range :Organization ;
+  IAO:0000115 "Links a person to their affiliated organization or institution." ;
+  rdfs:comment "Represents institutional affiliation for authors, researchers, or contributors." ;
+  owl:equivalentProperty schema:affiliation .
+
+# --- Person and organization properties ---
+
+:orcid a owl:DatatypeProperty , owl:FunctionalProperty ;
+  rdfs:label "ORCID" ;
+  rdfs:domain :Person ;
+  rdfs:range xsd:anyURI ;
+  IAO:0000115 "Open Researcher and Contributor ID (ORCID) for the person." ;
+  rdfs:comment "Unique persistent identifier for researchers (https://orcid.org/)." ;
+  owl:equivalentProperty wikidata:P496 .
+
+:givenName a owl:DatatypeProperty ;
+  rdfs:label "given name" ;
+  rdfs:domain :Person ;
+  rdfs:range xsd:string ;
+  IAO:0000115 "The person's given name (first name)." ;
+  owl:equivalentProperty schema:givenName , foaf:givenName .
+
+:familyName a owl:DatatypeProperty ;
+  rdfs:label "family name" ;
+  rdfs:domain :Person ;
+  rdfs:range xsd:string ;
+  IAO:0000115 "The person's family name (last name, surname)." ;
+  owl:equivalentProperty schema:familyName , foaf:familyName .
+
+:email a owl:DatatypeProperty ;
+  rdfs:label "email" ;
+  rdfs:domain :Person ;
+  rdfs:range xsd:string ;
+  IAO:0000115 "Email address for contacting the person." ;
+  owl:equivalentProperty schema:email , foaf:mbox .
+
+:organizationName a owl:DatatypeProperty ;
+  rdfs:label "organization name" ;
+  rdfs:domain :Organization ;
+  rdfs:range xsd:string ;
+  IAO:0000115 "The official name of an organization." ;
+  owl:equivalentProperty schema:name , foaf:name .
+
+:countryCode a owl:DatatypeProperty ;
+  rdfs:label "country code" ;
+  rdfs:domain :Organization ;
+  rdfs:range xsd:string ;
+  IAO:0000115 "ISO 3166-1 alpha-2 country code for the organization's location." ;
+  rdfs:comment "Two-letter country code (e.g., 'US', 'GB', 'DE')." ;
+  owl:equivalentProperty schema:addressCountry .
+
+:institutionType a owl:DatatypeProperty ;
+  rdfs:label "institution type" ;
+  rdfs:domain :Organization ;
+  rdfs:range xsd:string ;
+  IAO:0000115 "The type or category of institution (e.g., 'education', 'healthcare', 'funder', 'company')." ;
+  rdfs:comment "Categorizes organizations by their primary function or sector." .
+
+:ror a owl:DatatypeProperty , owl:FunctionalProperty ;
+  rdfs:label "ROR identifier" ;
+  rdfs:domain :Organization ;
+  rdfs:range xsd:anyURI ;
+  IAO:0000115 "Research Organization Registry (ROR) identifier for the organization." ;
+  rdfs:comment "Unique, persistent identifier for research organizations (https://ror.org/)." ;
+  owl:equivalentProperty wikidata:P6782 .
+
+# --- Study properties ---
+
+:studyType a owl:DatatypeProperty ; rdfs:label "study type" ; rdfs:domain :Study ; rdfs:range xsd:string ; IAO:0000115 "The type or methodology of the study (e.g., 'observational', 'interventional')." .
+:studyTypeTag a owl:DatatypeProperty ; rdfs:label "study type tag" ; rdfs:domain :Study ; rdfs:range xsd:string ; IAO:0000115 "Normalized tag for study type classification." ; rdfs:comment "Canonical identifier for study categorization (e.g., 'observational_cohort')." .
+:totalCases a owl:DatatypeProperty ; rdfs:label "total cases" ; rdfs:domain :Study ; rdfs:range xsd:integer ; IAO:0000115 "The total number of cases or affected individuals in the study." .
+:totalControls a owl:DatatypeProperty ; rdfs:label "total controls" ; rdfs:domain :Study ; rdfs:range xsd:integer ; IAO:0000115 "The total number of control subjects in the study." .
+:femaleCount a owl:DatatypeProperty ; rdfs:label "female count" ; rdfs:domain :Study ; rdfs:range xsd:integer ; IAO:0000115 "The number of female participants in the study." .
+:maleCount a owl:DatatypeProperty ; rdfs:label "male count" ; rdfs:domain :Study ; rdfs:range xsd:integer ; IAO:0000115 "The number of male participants in the study." .
+:species a owl:DatatypeProperty ; rdfs:label "species" ; rdfs:domain :Study ; rdfs:range xsd:string ; IAO:0000115 "The species of organisms studied (e.g., 'Homo sapiens', 'Mus musculus')." ; owl:equivalentProperty schema:species .
+
+:describedInPaper a owl:ObjectProperty ; rdfs:label "described in paper" ; rdfs:domain :Study ; rdfs:range :AcademicArticle ; IAO:0000115 "Links a study to the academic article that describes it." ; owl:inverseOf :describesStudy .
+
+:describesStudy a owl:ObjectProperty ; rdfs:label "describes study" ; rdfs:domain :AcademicArticle ; rdfs:range :Study ; IAO:0000115 "Links an academic article to a study it describes." ; owl:inverseOf :describedInPaper .
+
+:relatedToPaper a owl:ObjectProperty ; rdfs:label "related to paper" ; rdfs:range :AcademicArticle ; IAO:0000115 "Links an entity to a related academic article." ; rdfs:comment "General property for relating entities to publications." .
+
+:hasStudy a owl:ObjectProperty ; rdfs:label "has study" ; rdfs:range :Study ; IAO:0000115 "Links an entity to an associated research study." .
+
+# --- Provenance properties ---
+
+:hasProvenance a owl:ObjectProperty ; rdfs:label "has provenance" ; rdfs:domain :Entity ; rdfs:range :Provenance ; IAO:0000115 "Links an entity to its provenance record." ; owl:inverseOf :provenanceFor .
+:provenanceFor a owl:ObjectProperty ; rdfs:label "provenance for" ; rdfs:domain :Provenance ; rdfs:range :Entity ; IAO:0000115 "Links a provenance record to the entity it describes." ; owl:inverseOf :hasProvenance .
+:extractionMethod a owl:DatatypeProperty ; rdfs:label "extraction method" ; rdfs:domain :Provenance ; rdfs:range xsd:string ; IAO:0000115 "The method or process used for data extraction." ; rdfs:comment "Describes the technique, tool, or workflow used to extract information." .
+:sourceFile a owl:DatatypeProperty ; rdfs:label "source file" ; rdfs:domain :Provenance ; rdfs:range xsd:string ; IAO:0000115 "The original file path or location from which data was extracted." .
+:confidence a owl:DatatypeProperty ; rdfs:label "confidence" ; rdfs:range xsd:float ; IAO:0000115 "A confidence score or probability value (typically 0-1)." ; rdfs:comment "Represents certainty, reliability, or quality of extracted information." .
+
+# --- Observation properties ---
+
+:observationStatement a owl:DatatypeProperty ; rdfs:label "observation statement" ; rdfs:domain :Observation ; rdfs:range xsd:string ; IAO:0000115 "The textual statement or description of an observation made during research." ; rdfs:comment "Contains the actual observation text, finding statement, or recorded phenomenon. Renamed from 'observation' to avoid confusion with the :Observation class." ; skos:closeMatch dcterms:description , rdfs:comment .
+
+:hasObservation a owl:ObjectProperty ; rdfs:label "has observation" ; rdfs:range :Observation ; IAO:0000115 "Links an entity to an observation or finding associated with it." ; rdfs:comment "Relates studies, experiments, or other entities to documented observations." ; owl:inverseOf :isObservationOf .
+
+:isObservationOf a owl:ObjectProperty ; rdfs:label "is observation of" ; rdfs:domain :Observation ; IAO:0000115 "Links an observation to the entity it is about." ; rdfs:comment "Inverse of :hasObservation. Indicates what entity the observation pertains to." ; owl:inverseOf :hasObservation .
+
+# --- Observation subject/predicate/object + context (issue #5) ---------
+# Declared in schemas/linkml/evidence/evidence.yaml and emitted by
+# orchestration/stages/assembly.py for every real run, but -- until now --
+# never declared in this hand-maintained ontology, which is what
+# `mecfs ontology-export` (the CI smoke check) and `mecfs kg reason`
+# actually validate against. Also used, with the same meaning, on
+# :EntityMention (a bare mention sets only :hasSubject/:hasPredicate).
+# No domain is asserted: both :Observation and :EntityMention use these,
+# and OWL's domain/range are global entailments, not per-class validation
+# (validation/shapes/observation.shacl.ttl enforces per-class cardinality).
+
+:hasSubject a owl:ObjectProperty ;
+  rdfs:label "has subject" ;
+  rdfs:range :Entity ;
+  IAO:0000115 "The primary entity an observation or entity mention concerns (e.g. a gene, disease, phenotype). Always present." .
+
+:hasPredicate a owl:DatatypeProperty ;
+  rdfs:label "has predicate" ;
+  rdfs:range xsd:string ;
+  IAO:0000115 "The relation connecting subject and object." ;
+  rdfs:comment "Open vocabulary, not an enumerated set: real values include \"mentions\" (a bare :EntityMention), \"related_to\" (generic relation fallback), or a specific verb from relation extraction. Kept distinct from :hasDirection -- a predicate like \"associated_with\" can carry an increase *or* decrease direction." .
+
+:hasObject a owl:ObjectProperty ;
+  rdfs:label "has object" ;
+  rdfs:range :Entity ;
+  IAO:0000115 "The entity the subject is related to, when this observation captures a subject-predicate-object relation rather than a bare mention." ;
+  rdfs:comment "Absent by design on :EntityMention and on any :Observation whose predicate is \"mentions\"." .
+
+:hasDirection a owl:DatatypeProperty ;
+  rdfs:label "has direction" ;
+  rdfs:range xsd:string ;
+  IAO:0000115 "Direction of the measured effect, when this observation reports one." ;
+  rdfs:comment "Exactly one of \"increase\", \"decrease\", \"no_change\", \"unclear\" (pipelines/extraction/relations.py's vocabulary; \"unclear\" covers a detected but unresolved direction). Bare stems, not \"increased\"/\"decreased\"." .
+
+:hasMagnitude a owl:DatatypeProperty ;
+  rdfs:label "has magnitude" ;
+  rdfs:range xsd:double ;
+  IAO:0000115 "Effect size / magnitude of the measured change, when reported." .
+
+:hasStatisticalSignificance a owl:DatatypeProperty ;
+  rdfs:label "has statistical significance" ;
+  rdfs:range xsd:double ;
+  IAO:0000115 "Statistical significance (e.g. a p-value) of the finding, when reported." ;
+  rdfs:comment "Expected in [0, 1]; values outside that range usually mean a test statistic or effect size ended up here instead of a p-value." .
+
+:hasEvidence a owl:ObjectProperty ;
+  rdfs:label "has evidence" ;
+  rdfs:range :Evidence ;
+  IAO:0000115 "Sentence-/extraction-level evidence spans supporting this observation or entity mention." ;
+  rdfs:comment "Multivalued: one observation may merge several supporting extractions (issue #5). evidence.yaml models the target as a distinct EvidenceSpan class; the emitter types these nodes plain :Evidence, so that is the range asserted here." .
+
+:hasSpecimen a owl:ObjectProperty ;
+  rdfs:label "has specimen" ;
+  rdfs:range :Specimen ;
+  IAO:0000115 "The specimen this observation's measurement was taken from." ;
+  rdfs:comment "orchestration/stages/assembly.py mints a :Specimen entity IRI for this (labeled with the raw specimen-type string), matching evidence.yaml's declared object range; see validation/shapes/observation.shacl.ttl." .
+
+:hasSection a owl:DatatypeProperty ;
+  rdfs:label "has section" ;
+  rdfs:range xsd:string ;
+  IAO:0000115 "Document section (e.g. \"results\", \"abstract\") this observation, entity mention, or evidence span was drawn from." ;
+  rdfs:comment "AssemblyStage defaults this to \"uncategorized\" rather than omitting it, so it is always present on real output." .
+
+:hasTissue a owl:ObjectProperty ;
+  rdfs:label "has tissue" ;
+  rdfs:range :Tissue ;
+  IAO:0000115 "The tissue context of this observation." ;
+  rdfs:comment "Schema-ready, not yet populated: no current extraction stage identifies tissue mentions -- see docs/assembly/ASSEMBLY.md. When populated, orchestration/stages/assembly.py mints a :Tissue entity IRI for this, matching evidence.yaml's declared object range." .
+
+:hasCohort a owl:ObjectProperty ;
+  rdfs:label "has cohort" ;
+  rdfs:range :Cohort ;
+  IAO:0000115 "The participant cohort this observation was measured in." ;
+  rdfs:comment "Schema-ready, not yet populated -- see docs/assembly/ASSEMBLY.md. When populated, orchestration/stages/assembly.py mints a :Cohort entity IRI for this, matching evidence.yaml's declared object range." .
+
+# :hasAssay is declared above under Study properties (domain :Study, range
+# :Assay). orchestration/stages/assembly.py mints the same kind of :Assay
+# entity IRI for :Observation/:EntityMention nodes (labeled with the raw
+# assay-type string), so that single object-property declaration covers
+# both usages consistently -- no separate datatype-property redeclaration
+# needed.
+
+# --- Ontology mapping utilities ---
+
+:OntologyMapping a owl:Class ; rdfs:label "Ontology Mapping" ; rdfs:comment "A node representing a mapping from an entity to an ontology term, with optional confidence and provenance." .
+
+:hasOntologyMapping a owl:ObjectProperty ; rdfs:label "has ontology mapping" ; rdfs:domain :Entity ; rdfs:range :OntologyMapping ; rdfs:comment "Links an entity to an OntologyMapping node describing its mapping to an ontology term." .
+
+:mappedIRI a owl:ObjectProperty ; rdfs:label "mapped IRI" ; rdfs:domain :OntologyMapping ; rdfs:range rdfs:Resource ; rdfs:comment "The ontology IRI to which the entity is mapped." .
+
+:mappingConfidence a owl:DatatypeProperty ; rdfs:label "mapping confidence" ; rdfs:domain :OntologyMapping ; rdfs:range xsd:float ; rdfs:comment "A confidence score for the ontology mapping (e.g., from 0 to 1)." .
+
+:selectedOntologyTerm a owl:ObjectProperty ; rdfs:label "selected ontology term" ; rdfs:range rdfs:Resource ; IAO:0000115 "Links an entity to the preferred ontology term IRI selected from multiple mapping candidates." ; rdfs:comment "Used when multiple ontology mappings exist and one is chosen as the primary/best match. Generic property that can be used for specimens, study types, assays, or any other entity requiring ontology term selection." ; skos:relatedMatch :mappedIRI .
+
+:selectionConfidence a owl:DatatypeProperty ; rdfs:label "selection confidence" ; rdfs:range xsd:float ; IAO:0000115 "Confidence score (0-1) for a selected ontology term mapping." ; rdfs:comment "Indicates the certainty or quality of an ontology term selection. Generic property applicable to specimen selections, study type mappings, assay classifications, or any entity-to-ontology-term mapping. Higher values indicate greater confidence in the selection." ; skos:relatedMatch :mappingConfidence , :confidence .

@@ -1,0 +1,202 @@
+@prefix : <https://w3id.org/mecfs/kg/> .
+@prefix owl: <http://www.w3.org/2002/07/owl#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix dc: <http://purl.org/dc/elements/1.1/> .
+@prefix IAO: <http://purl.obolibrary.org/obo/IAO_> .
+@prefix NCIT: <http://purl.obolibrary.org/obo/NCIT_> .
+@prefix CHEBI: <http://purl.obolibrary.org/obo/CHEBI_> .
+@prefix uniprot: <http://purl.uniprot.org/core/> .
+@prefix SO: <http://purl.obolibrary.org/obo/SO_> .
+@prefix skos: <http://www.w3.org/2004/02/skos/core#> .
+@prefix SIO: <http://semanticscience.org/resource/SIO_> .
+@prefix biolink: <https://w3id.org/biolink/vocab/> .
+@prefix RO: <http://purl.obolibrary.org/obo/RO_> .
+@prefix PW: <http://purl.obolibrary.org/obo/PW_> .
+@prefix GO: <http://purl.obolibrary.org/obo/GO_> .
+@prefix OBI: <http://purl.obolibrary.org/obo/OBI_> .
+@prefix mi: <http://purl.obolibrary.org/obo/MI_> .
+@prefix MI: <http://purl.obolibrary.org/obo/MI_> .
+@prefix GENO: <http://purl.obolibrary.org/obo/GENO_> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+
+<https://w3id.org/mecfs/ontology/molecular> a owl:Ontology ;
+  owl:imports <https://w3id.org/mecfs/ontology/core> ,
+              <http://purl.obolibrary.org/obo/ncit.owl> ,
+              <http://purl.obolibrary.org/obo/chebi.owl> ,
+              <http://purl.obolibrary.org/obo/so.owl> ,
+              <http://purl.obolibrary.org/obo/pw.owl> ,
+              <http://purl.obolibrary.org/obo/obi.owl> ,
+              <http://purl.uniprot.org/core/uniprot.owl> ;
+  owl:versionIRI <https://w3id.org/mecfs/ontology/molecular/2025-09-22> ;
+  dc:title "AID-PAIS Molecular Ontology" ;
+  dc:description "Molecular module for AID-PAIS ontology, covering genes, proteins, metabolites, biomarkers, pathways, organisms, and drugs." .
+
+:MolecularFunction a owl:Class ; rdfs:subClassOf :Entity ; rdfs:label "Molecular Function" ; IAO:0000115 "A specific activity performed by a molecule, such as binding or catalysis." ; owl:equivalentClass GO:0003674 .
+
+:MolecularEntity a owl:Class ; rdfs:subClassOf :Entity ; rdfs:label "Molecular Entity" ; IAO:0000115 "A biological entity at the molecular level, such as a gene, protein, or metabolite." ; owl:equivalentClass CHEBI:23367 .
+:Gene a owl:Class ; rdfs:subClassOf :MolecularEntity ; rdfs:label "Gene" ; IAO:0000115 "A sequence of DNA that codes for a protein or functional RNA." ; owl:equivalentClass NCIT:C16612 ; skos:exactMatch SO:0000704 .
+:Protein a owl:Class ; rdfs:subClassOf :MolecularEntity ; rdfs:label "Protein" ; IAO:0000115 "A molecule composed of amino acids, performing various functions in the cell." ; owl:equivalentClass NCIT:C17021 , uniprot:Protein .
+
+:Pathway a owl:Class ; rdfs:subClassOf :BiologicalProcess ; rdfs:label "Pathway" ; IAO:0000115 "A biological pathway or molecular mechanism consisting of interconnected reactions and interactions." ; owl:equivalentClass PW:0000001 ; skos:exactMatch NCIT:C54214 .
+
+:Cytokine a owl:Class ; rdfs:subClassOf :Protein ; rdfs:label "Cytokine" ; IAO:0000115 "A type of protein involved in cell signaling, especially in immune responses." ; owl:equivalentClass NCIT:C20464 .
+:Metabolite a owl:Class ; rdfs:subClassOf :MolecularEntity ; rdfs:label "Metabolite" ; IAO:0000115 "A small molecule involved in metabolism." ; owl:equivalentClass NCIT:C61154 ; skos:exactMatch CHEBI:25212 .
+:Biomarker a owl:Class ; rdfs:subClassOf :MolecularEntity ; rdfs:label "Biomarker" ; IAO:0000115 "A measurable indicator of a biological state or condition." ; owl:equivalentClass NCIT:C16342 ; skos:exactMatch CHEBI:59163 .
+:Drug a owl:Class ; rdfs:subClassOf :MolecularEntity ; rdfs:label "Drug" ; IAO:0000115 "A substance that when absorbed into a living organism may modify one or more of its functions, generally used for therapeutic purposes." ; owl:equivalentClass CHEBI:23888 ; skos:closeMatch SIO:010038 .
+:Organism a owl:Class ; rdfs:subClassOf :Entity ; rdfs:label "Organism" ; IAO:0000115 "A living entity capable of replicating or reproducing, growth and maintenance." ; owl:equivalentClass OBI:0100026 ; skos:exactMatch NCIT:C14250 .
+
+:GeneDiseaseAssociation a owl:Class ;
+  rdfs:subClassOf :Entity ;
+  rdfs:label "Gene-Disease Association" ;
+  IAO:0000115 "A relationship instance representing the association between a gene and a disease, typically supported by evidence and scores." ;
+  owl:equivalentClass SIO:000983 ;
+  skos:closeMatch biolink:GeneToDiseaseAssociation , NCIT:C19402 .
+
+
+:ProteinFamily a owl:Class ;
+  rdfs:subClassOf :MolecularEntity ;
+  rdfs:label "Protein family" ;
+  rdfs:comment "A collection of proteins that share a common evolutionary origin; useful for grouping homologs and functional families." ;
+  owl:equivalentClass SIO:001380 , NCIT:C20130 , biolink:ProteinFamily .
+
+:Antibody a owl:Class ;
+  rdfs:subClassOf :Protein ;
+  rdfs:label "Antibody" ;
+  rdfs:comment "Immunoglobulin proteins used as reagents or biological effectors; useful to model experimental provenance (antibody-based assays)." ;
+  owl:equivalentClass NCIT:C16295 .
+
+:GeneProduct a owl:Class ;
+  rdfs:subClassOf :MolecularEntity ;
+  rdfs:label "Gene product" ;
+  rdfs:comment "The molecular product of a gene (protein, RNA, or complex)." ;
+  owl:equivalentClass NCIT:C26548 , GENO:0000907 .
+
+:GeneticVariant a owl:Class ;
+  rdfs:subClassOf :Entity ;
+  rdfs:label "Genetic variant" ;
+  rdfs:comment "Sequence-level variation such as SNPs, indels and structural variants; store identifiers (rsIDs, HGVS) as literals or links to external resources." ;
+  owl:equivalentClass NCIT:C17248 .
+
+:ProteinComplex a owl:Class ;
+  rdfs:subClassOf :MolecularEntity ;
+  rdfs:label "Protein complex" ;
+  rdfs:comment "A stable set of interacting proteins that acts as a functional unit." ;
+  owl:equivalentClass MI:0315 , SIO:010497 .
+
+:MolecularInteraction a owl:Class ;
+  rdfs:subClassOf :Entity ;
+  rdfs:label "Molecular interaction" ;
+  rdfs:comment "An interaction between molecular entities (protein-protein, protein-DNA, protein-ligand, etc.)." ;
+  owl:equivalentClass MI:0000 , NCIT:C18219 .
+
+:ProteinProteinInteraction a owl:Class ;
+  rdfs:subClassOf :MolecularInteraction ;
+  rdfs:label "Protein-protein interaction" ;
+  rdfs:comment "Temporary, non-covalent binding between protein molecules." ;
+  owl:equivalentClass NCIT:C18469 .
+
+:ProteinDNAInteraction a owl:Class ;
+  rdfs:subClassOf :MolecularInteraction ;
+  rdfs:label "Protein-DNA interaction" ;
+  rdfs:comment "Interactions between proteins and DNA (e.g., transcription factor binding)." ;
+  owl:equivalentClass NCIT:C18755 .
+
+:Enzyme a owl:Class ;
+  rdfs:subClassOf :Protein ;
+  rdfs:label "Enzyme" ;
+  rdfs:comment "Proteins with catalytic activity; link to GO molecular function for specific catalytic annotations." ;
+  owl:equivalentClass NCIT:C16554 .
+
+# -----------------------------------------------------
+# Useful properties for molecular modeling
+# -----------------------------------------------------
+
+:encodedBy a owl:ObjectProperty ;
+  rdfs:label "encoded by" ;
+  rdfs:domain :GeneProduct ;
+  rdfs:range :Gene ;
+  rdfs:comment "Links a gene product to the gene that encodes it." ;
+  owl:inverseOf :encodes .
+
+:encodes a owl:ObjectProperty ;
+  rdfs:label "encodes" ;
+  rdfs:domain :Gene ;
+  rdfs:range :GeneProduct ;
+  rdfs:comment "Inverse of :encodedBy." ;
+  owl:inverseOf :encodedBy .
+
+:hasSequence a owl:DatatypeProperty ;
+  rdfs:label "has sequence" ;
+  rdfs:range xsd:string ;
+  rdfs:comment "Primary sequence as an inline string or short FASTA; for long sequences prefer external storage and a reference URI." .
+
+:sequenceLength a owl:DatatypeProperty ;
+  rdfs:label "sequence length" ;
+  rdfs:range xsd:integer ;
+  rdfs:comment "Length of the sequence in amino acids or nucleotides." .
+
+:uniprotAccession a owl:DatatypeProperty , owl:FunctionalProperty ;
+  rdfs:label "UniProt accession" ;
+  rdfs:range xsd:string ;
+  rdfs:comment "Canonical UniProt accession (e.g., P12345). Use xsd:anyURI if storing full URIs." .
+
+:ensemblId a owl:DatatypeProperty , owl:FunctionalProperty ;
+  rdfs:label "Ensembl identifier" ;
+  rdfs:range xsd:string ;
+  rdfs:comment "Ensembl gene or transcript IDs (ENSG/ENST)." .
+
+:hasVariant a owl:ObjectProperty ;
+  rdfs:label "has variant" ;
+  rdfs:domain :GeneProduct ;
+  rdfs:range :GeneticVariant ;
+  rdfs:comment "Link gene product or gene to genetic variants." .
+
+:hasMember a owl:ObjectProperty ;
+  rdfs:label "has member" ;
+  rdfs:domain :ProteinComplex ;
+  rdfs:range :MolecularEntity ;
+  rdfs:comment "Members (proteins or gene products) comprising a protein complex." .
+
+:hasParticipant a owl:ObjectProperty ;
+  rdfs:label "has participant" ;
+  rdfs:domain :MolecularInteraction ;
+  rdfs:range :MolecularEntity ;
+  rdfs:comment "Participants in an interaction; use multiple assertions for multi-participant interactions." .
+
+:interactionType a owl:ObjectProperty ;
+  rdfs:label "interaction type" ;
+  rdfs:domain :MolecularInteraction ;
+  rdfs:range rdfs:Resource ;
+  rdfs:comment "A term identifying the type of interaction (e.g., binding, modification) — use MI or GO terms." .
+
+:interactsWith a owl:ObjectProperty , owl:SymmetricProperty ;
+  rdfs:label "interacts with" ;
+  rdfs:range :MolecularEntity ;
+  rdfs:comment "General symmetric interaction link — for many use-cases prefer explicit :MolecularInteraction nodes to carry evidence and provenance." .
+
+:hasPTM a owl:ObjectProperty ;
+  rdfs:label "has PTM" ;
+  rdfs:domain :Protein ;
+  rdfs:range :Entity ;
+  rdfs:comment "Links proteins to post-translational modification instances or terms (consider using PRO or PSI-MOD)." .
+
+:catalyzes a owl:ObjectProperty ;
+  rdfs:label "catalyzes" ;
+  rdfs:domain :Enzyme ;
+  rdfs:range :Pathway ;
+  rdfs:comment "Links an enzyme to the reaction or pathway it catalyzes (use Rhea/Reactome identifiers as objects where possible)." .
+
+:hasAlias a owl:DatatypeProperty ;
+  rdfs:label "alias" ;
+  rdfs:range xsd:string ;
+  rdfs:comment "Alternative name or synonym for an entity." .
+
+:smiles a owl:DatatypeProperty ;
+  rdfs:label "SMILES" ;
+  rdfs:range xsd:string ;
+  rdfs:comment "SMILES string for small molecules/drugs." .
+
+:inchi a owl:DatatypeProperty ;
+  rdfs:label "InChI" ;
+  rdfs:range xsd:string ;
+  rdfs:comment "InChI for small molecules/drugs." .

@@ -1,0 +1,38 @@
+@prefix owl: <http://www.w3.org/2002/07/owl#> .
+@prefix dc: <http://purl.org/dc/elements/1.1/> .
+
+<https://w3id.org/mecfs/ontology/process> a owl:Ontology ;
+  owl:imports <https://w3id.org/mecfs/ontology/core> ,
+              <https://w3id.org/mecfs/ontology/anatomical> ,
+              <https://w3id.org/mecfs/ontology/molecular> ,
+              <https://w3id.org/mecfs/ontology/relations> ,
+              <http://purl.obolibrary.org/obo/ncit.owl> ,
+              <http://purl.obolibrary.org/obo/clao.owl> ,
+              <http://purl.obolibrary.org/obo/uberon.owl> ,
+              <http://www.ebi.ac.uk/efo/efo.owl> ,
+              <http://purl.obolibrary.org/obo/go.owl> ,
+              <https://w3id.org/biolink/biolink.owl> ,
+              <http://purl.bioontology.org/ontology/STY/STY.owl> ,
+              <https://www.wikidata.org/wiki/Special:EntityData/Q30892994.rdf> ;
+  owl:versionIRI <https://w3id.org/mecfs/ontology/process/2025-09-22> ;
+  dc:title "AID-PAIS Process Ontology" ;
+  dc:description "Process module for AID-PAIS ontology, covering biological, physiological, and pathophysiological processes." .
+
+# This module used to redeclare ten classes already owned elsewhere:
+# aid-pais-core.ttl (BiologicalProcess, PhysiologicalProcess,
+# PathophysiologicalProcess), aid-pais-anatomical.ttl (AnatomicalEntity,
+# OrganSystem, Organ, Tissue, CellType, CellularComponent) and
+# aid-pais-molecular.ttl (MolecularFunction). Nine of the ten copies were
+# byte-for-byte identical to the canonical declaration; PhysiologicalProcess
+# differed -- this module's copy carried extra skos:exactMatch mappings
+# (STY:T039, wikidata:Q30892994) that core.ttl's declaration lacked, now
+# merged into the canonical declaration so they aren't lost.
+#
+# `load_merged_ontology()` (validation/ontology.py) loads all eight module
+# files into one graph regardless of these owl:imports declarations, so the
+# duplication was already redundant there; it also meant an edit to one
+# copy would silently not propagate to the other -- which is exactly how
+# :Observation (aid-pais-measurement.ttl vs aid-pais-evidence.ttl) drifted
+# into two conflicting owl:equivalentClass assertions on the same URI (see
+# aid-pais-measurement.ttl). This module now only groups its three sources
+# via owl:imports and adds nothing of its own.
